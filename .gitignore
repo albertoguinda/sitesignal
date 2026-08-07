@@ -6,3 +6,9 @@ data/
 *.local
 .DS_Store
 node_modules/.tmp/
+
+# Replit workspace state (the .replit config itself IS committed)
+.config/
+.upm/
+.cache/
+replit.nix.bak
