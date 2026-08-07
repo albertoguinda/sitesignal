@@ -1,0 +1,254 @@
+@import "tailwindcss";
+@import "./tokens.css";
+
+/* ============================================================================
+   Token → Tailwind bridge.
+   `inline` makes every generated utility emit `var(--sig-*)` rather than a
+   literal, so the token file stays the single source of truth at runtime.
+   ========================================================================== */
+@theme inline {
+  /* --- Colour ------------------------------------------------------------- */
+  --color-base: var(--sig-surface-base);
+  --color-sunken: var(--sig-surface-sunken);
+  --color-raised: var(--sig-surface-raised);
+  --color-elevated: var(--sig-surface-elevated);
+  --color-overlay: var(--sig-surface-overlay);
+  --color-hover: var(--sig-surface-hover);
+
+  --color-line: var(--sig-line);
+  --color-line-strong: var(--sig-line-strong);
+  --color-line-faint: var(--sig-line-faint);
+
+  --color-ink: var(--sig-ink);
+  --color-ink-soft: var(--sig-ink-soft);
+  --color-ink-muted: var(--sig-ink-muted);
+  --color-ink-faint: var(--sig-ink-faint);
+  --color-ink-inverse: var(--sig-ink-inverse);
+
+  --color-brand: var(--sig-brand);
+  --color-brand-strong: var(--sig-brand-strong);
+  --color-brand-deep: var(--sig-brand-deep);
+  --color-brand-contrast: var(--sig-brand-contrast);
+  --color-brand-wash: var(--sig-brand-wash);
+
+  --color-ok: var(--sig-status-ok);
+  --color-warning: var(--sig-status-warning);
+  --color-critical: var(--sig-status-critical);
+  --color-info: var(--sig-status-info);
+  --color-ok-wash: var(--sig-status-ok-wash);
+  --color-warning-wash: var(--sig-status-warning-wash);
+  --color-critical-wash: var(--sig-status-critical-wash);
+  --color-info-wash: var(--sig-status-info-wash);
+  --color-ok-line: var(--sig-status-ok-line);
+  --color-warning-line: var(--sig-status-warning-line);
+  --color-critical-line: var(--sig-status-critical-line);
+  --color-info-line: var(--sig-status-info-line);
+
+  --color-focus: var(--sig-focus-ring);
+
+  --color-chart-1: var(--sig-chart-1);
+  --color-chart-2: var(--sig-chart-2);
+  --color-chart-3: var(--sig-chart-3);
+  --color-chart-4: var(--sig-chart-4);
+  --color-chart-5: var(--sig-chart-5);
+  --color-chart-6: var(--sig-chart-6);
+
+  --color-temperature: var(--sig-metric-temperature);
+  --color-vibration: var(--sig-metric-vibration);
+  --color-humidity: var(--sig-metric-humidity);
+
+  /* --- Type --------------------------------------------------------------- */
+  --font-sans: var(--sig-font-sans);
+  --font-mono: var(--sig-font-mono);
+
+  --text-2xs: var(--sig-text-2xs);
+  --text-xs: var(--sig-text-xs);
+  --text-sm: var(--sig-text-sm);
+  --text-base: var(--sig-text-base);
+  --text-md: var(--sig-text-md);
+  --text-lg: var(--sig-text-lg);
+  --text-xl: var(--sig-text-xl);
+  --text-2xl: var(--sig-text-2xl);
+  --text-3xl: var(--sig-text-3xl);
+  --text-4xl: var(--sig-text-4xl);
+
+  --leading-tight: var(--sig-leading-tight);
+  --leading-snug: var(--sig-leading-snug);
+  --leading-normal: var(--sig-leading-normal);
+  --tracking-wide: var(--sig-tracking-wide);
+  --tracking-wider: var(--sig-tracking-wider);
+
+  /* --- Radius ------------------------------------------------------------- */
+  --radius-xs: var(--sig-radius-xs);
+  --radius-sm: var(--sig-radius-sm);
+  --radius-md: var(--sig-radius-md);
+  --radius-lg: var(--sig-radius-lg);
+  --radius-xl: var(--sig-radius-xl);
+  --radius-full: var(--sig-radius-full);
+
+  /* --- Elevation ---------------------------------------------------------- */
+  --shadow-sm: var(--sig-shadow-sm);
+  --shadow-md: var(--sig-shadow-md);
+  --shadow-lg: var(--sig-shadow-lg);
+
+  /* --- Motion ------------------------------------------------------------- */
+  --ease-out: var(--sig-ease-out);
+  --ease-in-out: var(--sig-ease-in-out);
+
+  /* --- Animation ---------------------------------------------------------- */
+  --animate-pulse-ring: pulse-ring 2.4s var(--sig-ease-in-out) infinite;
+  --animate-sweep: sweep 2.6s linear infinite;
+  --animate-rise: rise var(--sig-duration-slow) var(--sig-ease-out) both;
+}
+
+@keyframes pulse-ring {
+  0% {
+    transform: scale(0.85);
+    opacity: 0.9;
+  }
+  70% {
+    transform: scale(1.9);
+    opacity: 0;
+  }
+  100% {
+    transform: scale(1.9);
+    opacity: 0;
+  }
+}
+
+@keyframes sweep {
+  0% {
+    transform: translateX(-100%);
+  }
+  100% {
+    transform: translateX(100%);
+  }
+}
+
+@keyframes rise {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@layer base {
+  * {
+    border-color: var(--sig-line);
+  }
+
+  html {
+    background-color: var(--sig-surface-base);
+    color-scheme: dark;
+    -webkit-text-size-adjust: 100%;
+  }
+
+  body {
+    margin: 0;
+    min-height: 100vh;
+    background-color: var(--sig-surface-base);
+    color: var(--sig-ink);
+    font-family: var(--sig-font-sans);
+    font-size: var(--sig-text-base);
+    line-height: var(--sig-leading-normal);
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+  }
+
+  /* Engineering grid: pure decoration, kept behind everything. */
+  body::before {
+    content: "";
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    z-index: var(--sig-z-base);
+    background-image:
+      linear-gradient(to right, var(--sig-grid-line) 1px, transparent 1px),
+      linear-gradient(to bottom, var(--sig-grid-line) 1px, transparent 1px);
+    background-size: var(--sig-grid-size) var(--sig-grid-size);
+    mask-image: radial-gradient(ellipse 120% 80% at 50% 0%, black 0%, transparent 72%);
+  }
+
+  :focus-visible {
+    outline: 2px solid var(--sig-focus-ring);
+    outline-offset: 2px;
+    border-radius: var(--sig-radius-sm);
+  }
+
+  h1,
+  h2,
+  h3,
+  h4 {
+    margin: 0;
+    font-weight: var(--sig-weight-semibold);
+    line-height: var(--sig-leading-tight);
+    color: var(--sig-ink);
+  }
+
+  /* Telemetry figures must be scannable in a column: always tabular. */
+  .tabular,
+  th[data-numeric],
+  td[data-numeric] {
+    font-family: var(--sig-font-mono);
+    font-variant-numeric: tabular-nums;
+    font-feature-settings: "tnum";
+  }
+
+  ::selection {
+    background-color: var(--sig-brand);
+    color: var(--sig-brand-contrast);
+  }
+
+  ::-webkit-scrollbar {
+    width: 10px;
+    height: 10px;
+  }
+  ::-webkit-scrollbar-track {
+    background: var(--sig-surface-sunken);
+  }
+  ::-webkit-scrollbar-thumb {
+    background: var(--sig-line-strong);
+    border-radius: var(--sig-radius-full);
+    border: 2px solid var(--sig-surface-sunken);
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    background: var(--sig-ink-faint);
+  }
+}
+
+/* Tailwind v4 has no `--duration-*` theme namespace, so a raw `duration-150`
+   would hardcode a motion value outside the token file. These three utilities
+   are the only way components express timing. */
+@utility motion-fast {
+  transition-duration: var(--sig-duration-fast);
+  transition-timing-function: var(--sig-ease-out);
+}
+
+@utility motion-base {
+  transition-duration: var(--sig-duration-base);
+  transition-timing-function: var(--sig-ease-out);
+}
+
+@utility motion-slow {
+  transition-duration: var(--sig-duration-slow);
+  transition-timing-function: var(--sig-ease-out);
+}
+
+@utility panel {
+  background-color: var(--sig-panel-bg);
+  border: 1px solid var(--sig-panel-border);
+  border-radius: var(--sig-panel-radius);
+  box-shadow: var(--sig-panel-shadow);
+}
+
+@utility label-caps {
+  font-size: var(--sig-text-2xs);
+  font-weight: var(--sig-weight-semibold);
+  letter-spacing: var(--sig-tracking-wider);
+  text-transform: uppercase;
+  color: var(--sig-ink-muted);
+}

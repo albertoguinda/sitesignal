@@ -1,0 +1,222 @@
+/* ============================================================================
+   SiteSignal — design tokens
+   ----------------------------------------------------------------------------
+   THE theme file. Every colour, size, radius, shadow and motion value in the
+   application originates here. Components never hardcode a colour: they consume
+   a Tailwind utility that Tailwind maps back to one of these custom properties
+   (see `@theme inline` in index.css), or read the property directly when the
+   consumer is canvas/WebGL rather than CSS.
+
+   Three layers, in order:
+     1. PRIMITIVES — raw palette and scales. Never referenced by a component.
+     2. SEMANTIC   — meaning ("surface", "critical"). What components use.
+     3. COMPONENT  — a handful of composite values reused across components.
+
+   Re-skinning the product means editing layer 1 and, at most, layer 2.
+   ========================================================================== */
+
+:root {
+  /* ==========================================================================
+     1. PRIMITIVES
+     ========================================================================== */
+
+  /* --- Graphite ramp: the industrial substrate ---------------------------- */
+  --sig-graphite-1000: #06080b;
+  --sig-graphite-950: #0a0d12;
+  --sig-graphite-900: #0e131a;
+  --sig-graphite-850: #11161d;
+  --sig-graphite-800: #171e27;
+  --sig-graphite-700: #1e2732;
+  --sig-graphite-600: #232c38;
+  --sig-graphite-500: #33404f;
+  --sig-graphite-400: #4c5c6f;
+  --sig-graphite-300: #7d8b9c;
+  --sig-graphite-200: #b7c3d0;
+  --sig-graphite-100: #dbe3ec;
+  --sig-graphite-50: #e8eef5;
+  --sig-graphite-0: #ffffff;
+
+  /* --- Signal hues -------------------------------------------------------- */
+  --sig-cyan-400: #35d6f0;
+  --sig-cyan-500: #17b4cd;
+  --sig-cyan-600: #0e8ba1;
+  --sig-green-400: #3ddc97;
+  --sig-amber-400: #ffbe3d;
+  --sig-red-400: #ff5f6d;
+  --sig-blue-400: #57a6ff;
+  --sig-violet-400: #a78bfa;
+  --sig-pink-400: #ff8fa3;
+  --sig-sky-400: #7dd3fc;
+
+  /* --- Type ramp (dashboard-dense: 14px body) ----------------------------- */
+  --sig-font-sans:
+    "Segoe UI Variable Text", "Segoe UI", ui-sans-serif, system-ui, -apple-system,
+    "Helvetica Neue", Arial, sans-serif;
+  --sig-font-mono:
+    "Cascadia Mono", ui-monospace, "JetBrains Mono", "SFMono-Regular", Consolas, Menlo, monospace;
+
+  --sig-text-2xs: 0.6875rem; /* 11px — table meta, axis ticks */
+  --sig-text-xs: 0.75rem; /*    12px — labels, badges          */
+  --sig-text-sm: 0.8125rem; /*  13px — dense table body        */
+  --sig-text-base: 0.875rem; /* 14px — body copy               */
+  --sig-text-md: 1rem; /*        16px — emphasised body        */
+  --sig-text-lg: 1.125rem; /*    18px — card titles            */
+  --sig-text-xl: 1.375rem; /*    22px — section headings       */
+  --sig-text-2xl: 1.75rem; /*    28px — page title             */
+  --sig-text-3xl: 2.25rem; /*    36px — KPI figure             */
+  --sig-text-4xl: 3rem; /*       48px — hero figure            */
+
+  --sig-leading-tight: 1.15;
+  --sig-leading-snug: 1.35;
+  --sig-leading-normal: 1.55;
+  --sig-tracking-wide: 0.06em;
+  --sig-tracking-wider: 0.12em;
+
+  --sig-weight-regular: 400;
+  --sig-weight-medium: 500;
+  --sig-weight-semibold: 600;
+  --sig-weight-bold: 700;
+
+  /* --- Spacing: 4pt grid -------------------------------------------------- */
+  --sig-space-0: 0rem;
+  --sig-space-1: 0.25rem;
+  --sig-space-2: 0.5rem;
+  --sig-space-3: 0.75rem;
+  --sig-space-4: 1rem;
+  --sig-space-5: 1.25rem;
+  --sig-space-6: 1.5rem;
+  --sig-space-8: 2rem;
+  --sig-space-10: 2.5rem;
+  --sig-space-12: 3rem;
+  --sig-space-16: 4rem;
+  --sig-space-20: 5rem;
+
+  /* --- Radii: tight, mechanical ------------------------------------------- */
+  --sig-radius-xs: 0.125rem;
+  --sig-radius-sm: 0.25rem;
+  --sig-radius-md: 0.375rem;
+  --sig-radius-lg: 0.625rem;
+  --sig-radius-xl: 0.875rem;
+  --sig-radius-full: 9999px;
+
+  /* --- Elevation ---------------------------------------------------------- */
+  --sig-shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.45);
+  --sig-shadow-md: 0 6px 18px -6px rgb(0 0 0 / 0.6);
+  --sig-shadow-lg: 0 20px 48px -16px rgb(0 0 0 / 0.72);
+  --sig-shadow-inset: inset 0 1px 0 0 rgb(255 255 255 / 0.04);
+
+  /* --- Motion ------------------------------------------------------------- */
+  --sig-duration-instant: 90ms;
+  --sig-duration-fast: 150ms;
+  --sig-duration-base: 240ms;
+  --sig-duration-slow: 420ms;
+  --sig-ease-out: cubic-bezier(0.22, 1, 0.36, 1);
+  --sig-ease-in-out: cubic-bezier(0.65, 0, 0.35, 1);
+
+  /* --- Layering ----------------------------------------------------------- */
+  --sig-z-base: 0;
+  --sig-z-sticky: 100;
+  --sig-z-dropdown: 200;
+  --sig-z-overlay: 300;
+  --sig-z-modal: 400;
+  --sig-z-tooltip: 500;
+
+  /* ==========================================================================
+     2. SEMANTIC — what components actually consume
+     ========================================================================== */
+
+  /* --- Surfaces ----------------------------------------------------------- */
+  --sig-surface-base: var(--sig-graphite-950);
+  --sig-surface-sunken: var(--sig-graphite-1000);
+  --sig-surface-raised: var(--sig-graphite-850);
+  --sig-surface-elevated: var(--sig-graphite-800);
+  --sig-surface-overlay: var(--sig-graphite-900);
+  --sig-surface-hover: var(--sig-graphite-700);
+
+  /* --- Lines -------------------------------------------------------------- */
+  --sig-line: var(--sig-graphite-600);
+  --sig-line-strong: var(--sig-graphite-500);
+  --sig-line-faint: var(--sig-graphite-700);
+
+  /* --- Ink ---------------------------------------------------------------- */
+  --sig-ink: var(--sig-graphite-50);
+  --sig-ink-soft: var(--sig-graphite-200);
+  --sig-ink-muted: var(--sig-graphite-300);
+  --sig-ink-faint: var(--sig-graphite-400);
+  --sig-ink-inverse: var(--sig-graphite-1000);
+
+  /* --- Brand -------------------------------------------------------------- */
+  --sig-brand: var(--sig-cyan-400);
+  --sig-brand-strong: var(--sig-cyan-500);
+  --sig-brand-deep: var(--sig-cyan-600);
+  --sig-brand-contrast: var(--sig-graphite-1000);
+  --sig-brand-wash: color-mix(in oklab, var(--sig-cyan-400) 14%, transparent);
+
+  /* --- Status ------------------------------------------------------------- */
+  --sig-status-ok: var(--sig-green-400);
+  --sig-status-warning: var(--sig-amber-400);
+  --sig-status-critical: var(--sig-red-400);
+  --sig-status-info: var(--sig-blue-400);
+
+  --sig-status-ok-wash: color-mix(in oklab, var(--sig-green-400) 16%, transparent);
+  --sig-status-warning-wash: color-mix(in oklab, var(--sig-amber-400) 16%, transparent);
+  --sig-status-critical-wash: color-mix(in oklab, var(--sig-red-400) 18%, transparent);
+  --sig-status-info-wash: color-mix(in oklab, var(--sig-blue-400) 16%, transparent);
+
+  --sig-status-ok-line: color-mix(in oklab, var(--sig-green-400) 42%, transparent);
+  --sig-status-warning-line: color-mix(in oklab, var(--sig-amber-400) 42%, transparent);
+  --sig-status-critical-line: color-mix(in oklab, var(--sig-red-400) 46%, transparent);
+  --sig-status-info-line: color-mix(in oklab, var(--sig-blue-400) 42%, transparent);
+
+  /* --- Focus -------------------------------------------------------------- */
+  --sig-focus-ring: var(--sig-cyan-400);
+  --sig-focus-offset: var(--sig-surface-base);
+
+  /* --- Data visualisation ------------------------------------------------- */
+  --sig-chart-1: var(--sig-cyan-400);
+  --sig-chart-2: var(--sig-violet-400);
+  --sig-chart-3: var(--sig-amber-400);
+  --sig-chart-4: var(--sig-green-400);
+  --sig-chart-5: var(--sig-pink-400);
+  --sig-chart-6: var(--sig-sky-400);
+  --sig-chart-grid: var(--sig-graphite-700);
+  --sig-chart-axis: var(--sig-graphite-400);
+
+  /* One hue per physical quantity, used identically in charts, tables and 3D. */
+  --sig-metric-temperature: var(--sig-amber-400);
+  --sig-metric-vibration: var(--sig-violet-400);
+  --sig-metric-humidity: var(--sig-cyan-400);
+
+  /* ==========================================================================
+     3. COMPONENT — composite values shared by more than one component
+     ========================================================================== */
+  --sig-panel-bg: var(--sig-surface-raised);
+  --sig-panel-border: var(--sig-line);
+  --sig-panel-radius: var(--sig-radius-lg);
+  --sig-panel-shadow: var(--sig-shadow-md), var(--sig-shadow-inset);
+
+  --sig-header-height: 3.5rem;
+  --sig-content-max: 96rem;
+  --sig-tap-target: 2.25rem;
+
+  /* Faint engineering grid painted behind the app frame. */
+  --sig-grid-line: color-mix(in oklab, var(--sig-graphite-500) 22%, transparent);
+  --sig-grid-size: 44px;
+
+  /* 3D scene */
+  --sig-scene-bg: var(--sig-graphite-1000);
+  --sig-scene-floor: var(--sig-graphite-900);
+  --sig-scene-grid: var(--sig-graphite-400);
+  --sig-scene-key-light: var(--sig-graphite-50);
+  --sig-scene-fill-light: var(--sig-cyan-400);
+}
+
+/* Long-form telemetry animations are decorative; honour the OS preference. */
+@media (prefers-reduced-motion: reduce) {
+  :root {
+    --sig-duration-instant: 0ms;
+    --sig-duration-fast: 0ms;
+    --sig-duration-base: 0ms;
+    --sig-duration-slow: 0ms;
+  }
+}
