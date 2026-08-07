@@ -1,120 +1,150 @@
 # SiteSignal
 
-Industrial asset monitoring dashboard template. React + Vite + Express + Postgres (Drizzle) + Tailwind + shadcn/ui, with a react-three-fiber floor plan and server-side Open-Meteo ambient conditions.
+**A monitoring dashboard that is already full of data the moment you open it.**
 
-The point of the template is that it is **never empty**: a clone runs migrations, seeds three sites, eighteen assets, sixty days of hourly telemetry and twelve alerts, and lands on a full dashboard.
+Three industrial sites, eighteen machines, sixty days of telemetry, live weather
+per site, a 3D floor plan you can click through, and a documented design system.
+No database to provision, no API key to sign up for, no empty state to stare at.
 
-## Quick start
+<!-- SCREENSHOT: overview screen, 1512×950, docs/media/overview.png -->
+<!-- GIF: click a hotspot in the 3D floor plan → sensor readout panel opens, docs/media/hotspot.gif -->
+
+---
+
+## Run it
+
+**On Replit:** press **Run**. That is the whole procedure.
+
+**Anywhere else:**
 
 ```bash
 npm install
 npm run dev
 ```
 
-- Client: <http://localhost:5173>
-- API: <http://localhost:5174>
+Open <http://localhost:5000>.
 
-No database to provision and no API key to obtain. First boot applies the migrations and seeds the dataset (~15–40 s depending on the machine); every later boot skips seeding.
+The first boot expands a pre-seeded database that ships with the repository and
+slides its timestamps up to the current hour, so the dashboard is populated and
+*recent* whether you open it today or in six months. Measured cold start on a
+laptop: **~8 s** on a fresh clone, **~6 s** afterwards.
 
-## Database: embedded by default, Postgres when you want it
+---
 
-Without `DATABASE_URL` the app runs on [PGlite](https://pglite.dev) — real Postgres compiled to WASM, persisted under `./data/sitesignal`. Point `DATABASE_URL` at a server and the *same* schema, the *same* generated migrations and the *same* queries run through `node-postgres` instead:
+## What you get
+
+| Screen | What it shows |
+| ------ | ------------- |
+| `/` | KPI cards, per-site weather, a sortable table of every machine with its latest reading per metric, and a live alert feed |
+| `/assets/:id` | A react-three-fiber floor plan of the whole site — machines extruded from their stored coordinates, tinted by status, with pulsing hotspots that open a sensor readout — plus telemetry charts and alert history |
+| `/analytics` | Compare one metric across up to six machines, over 24 h to 60 d |
+| `/design-system` | Living documentation: every colour token, the type scale, spacing, motion, and every component, rendered by the real components |
+
+<!-- SCREENSHOT: /assets/6 with the 3D scene, docs/media/asset-detail.png -->
+<!-- SCREENSHOT: /design-system colour section, docs/media/design-system.png -->
+
+---
+
+## Architecture in five lines
+
+1. **React 19 + Vite** client, four routes, three.js and Recharts lazy-loaded per route.
+2. **Express 5** serves the API and, in production, the built client — one process, one port.
+3. **Drizzle + Postgres**: embedded PGlite by default, any Postgres via `DATABASE_URL`, same schema either way.
+4. **`shared/types.ts`** is the contract both sides import, so an API change breaks the client at compile time.
+5. **`src/styles/tokens.css`** is the only place a colour, size or duration is defined; everything else references it.
+
+---
+
+## Make it yours
+
+### Use a real Postgres instead of the embedded one
+
+Set one variable. Nothing else changes — same schema, same migrations, same queries.
 
 ```bash
-DATABASE_URL=postgres://user:pass@localhost:5432/sitesignal npm run dev
+DATABASE_URL=postgres://user:pass@host:5432/sitesignal npm run dev
 ```
 
-The switch lives in `server/db/client.ts` and nothing above it changes.
+On Replit, add it in the **Secrets** panel. The switch lives in
+`server/db/client.ts`; the rest of the server never learns which driver it got.
 
-### Data model
+### Swap Open-Meteo for another data source
 
-| Table      | Columns |
-| ---------- | ------- |
-| `sites`    | `id`, `name`, `lat`, `lng`, `timezone` |
-| `assets`   | `id`, `site_id`, `name`, `type`, `status` (`ok\|warning\|critical`), `pos_x`, `pos_y`, `pos_z`, `installed_at` |
-| `readings` | `id`, `asset_id`, `metric`, `value`, `unit`, `recorded_at` |
-| `alerts`   | `id`, `asset_id`, `severity`, `message`, `state` (`open\|ack\|resolved`), `opened_at` |
+`server/services/weather.ts` is a self-contained client: it fetches, shapes the
+response into `AmbientSummary`, caches for 15 minutes and serves a stale copy if
+the upstream fails. To use a different provider, keep the exported functions and
+replace the middle:
 
-`readings` carries a composite index on `(asset_id, metric, recorded_at)` — every time-series query rides it.
+1. Change `buildUrl()` to your endpoint (add the key from `process.env`).
+2. Change `parse()` to map your response into `WeatherCurrent` and
+   `WeatherForecastPoint` in `shared/types.ts`.
+3. Leave `getAmbient()` alone — the cache, request coalescing and stale
+   fallback are provider-agnostic.
 
-### Seed
+The same shape works for anything ambient: an air-quality API, a building
+management system, your own sensor gateway.
 
-Deterministic: a fixed-seed PRNG means the dataset is identical on every machine. Each series is a daily cycle plus a weekly drift plus Gaussian sensor noise, and assets that are not healthy carry a degradation ramp over the final two weeks — so the charts show structure a human recognises rather than random walk.
+### Adapt it to a different domain
+
+The app is not really about pumps. It is *entities positioned in space, each
+emitting time series, each raising alerts*. That covers server racks, delivery
+vans, greenhouse zones, retail floors, wind turbines.
+
+| To change | Edit |
+| --------- | ---- |
+| The vocabulary (asset types, metrics, units, statuses) | `shared/types.ts` |
+| The demo fleet: sites, machines, coordinates, alert text | `server/db/seed-data.ts` |
+| How each metric behaves over time (baseline, daily cycle, drift, failure ramp) | `buildSeries()` in `server/db/seed.ts` |
+| The shape of each machine in the 3D scene | `ASSET_GEOMETRY` in `src/components/asset-scene.tsx` |
+| Colours, type scale, spacing, motion | `src/styles/tokens.css` — one file, and `/design-system` re-renders itself |
+| Tables and columns | `server/db/schema.ts`, then `npm run db:generate` |
+
+After changing the seed, rebuild the shipped dataset so forks get your version:
 
 ```bash
-npm run db:seed     # seed if empty
-npm run db:reset    # truncate and rebuild
-npm run db:generate # regenerate SQL migrations after a schema change
+npm run db:reset      # regenerate the database
+npm run db:snapshot   # write data/sitesignal-seed.tar.gz
 ```
 
-## Screens
+---
 
-| Route | What it does |
-| ----- | ------------ |
-| `/` | KPI cards, site selector, ambient conditions per site, sortable asset table, recent alert feed |
-| `/assets/:id` | react-three-fiber floor plan of the whole site — assets as extruded boxes at their stored coordinates, tinted by status, with pulsing clickable hotspots that raise a sensor readout — plus latest readings, per-metric telemetry charts and alert history |
-| `/analytics` | Multi-asset comparison on one metric, range selector from 24 h to 60 d, series summary table |
-| `/design-system` | Living documentation: colour tokens, type scale, spacing, shape, motion, and every UI component the app ships, rendered by the real components |
+## Commands
 
-`?site=<id>` on `/` keeps the scope in the URL.
+| Command | |
+| ------- | - |
+| `npm run dev` | Vite on the public port, Express behind it |
+| `npm start` | Production: one process serving API and client |
+| `npm run build` | Typecheck, then build the client |
+| `npm run typecheck` | `tsc -b` across client, server and scripts |
+| `npm run db:reset` | Rebuild the database from the seeder |
+| `npm run db:snapshot` | Write the shipped snapshot from the current database |
+| `npm run db:restore` | Restore the shipped snapshot, discarding local changes |
+| `npm run db:generate` | Regenerate SQL migrations after a schema change |
 
-## API
+## Configuration
 
-All read-only, under `/api`.
+Everything has a working default; see `.env.example`. The ones worth knowing:
 
-| Endpoint | Notes |
-| -------- | ----- |
-| `GET /health` | Status and active driver |
-| `GET /overview?siteId=` | KPIs + assets + recent alerts + ambient, one round trip |
-| `GET /sites`, `GET /sites/:id` | |
-| `GET /sites/ambient`, `GET /sites/:id/ambient` | Open-Meteo, cached 15 min |
-| `GET /assets?siteId=` | Rows with latest value per metric and 24 h delta |
-| `GET /assets/:id?range=` | Detail: asset, site, siblings, alerts, series |
-| `GET /assets/:id/readings?metric=&range=` | |
-| `GET /alerts?siteId=&assetId=&state=&limit=` | |
-| `GET /analytics/series?assetIds=1,4,9&metric=&range=` | Up to six assets |
+| Variable | Default | |
+| -------- | ------- | - |
+| `PORT` | `5000` | The single public port. Replit injects it. |
+| `DATABASE_URL` | *(unset)* | Set it to use a real Postgres instead of PGlite. |
+| `SEED_READINGS` | `18000` | Row count target. Changes sampling resolution, never the 60-day range. |
+| `WEATHER_CACHE_MINUTES` | `15` | Ambient-conditions cache window. |
 
-Query parameters are validated with Zod; a bad value returns `400` with the offending field, an unknown id returns `404`.
+---
 
-### Open-Meteo
+## What is deliberately missing
 
-No API key. `server/services/weather.ts` fetches current conditions and a forecast per site by lat/lng, caches for `WEATHER_CACHE_MINUTES` (15), collapses concurrent misses into one upstream call, and on failure serves the expired entry flagged `stale` rather than breaking the page.
+No authentication, no roles, no tests, no multi-tenancy. This is a template for
+the monitoring surface itself — adding those on top is your job, and they are
+much easier to add to something that already renders.
 
-## Design system
+## Credits
 
-`src/styles/tokens.css` is the single theme file — every colour, size, radius, shadow and duration in the product. Three layers: primitives (raw ramp), semantic (`--sig-surface-raised`, `--sig-status-critical`), component (`--sig-panel-*`, scene colours).
+Ambient conditions from [Open-Meteo](https://open-meteo.com) (no API key).
+Embedded Postgres by [PGlite](https://pglite.dev).
 
-Components never hardcode a colour. `src/styles/index.css` maps the tokens into Tailwind's theme with `@theme inline`, so `bg-raised` emits `var(--sig-surface-raised)` rather than a literal. Consumers that cannot use CSS — three.js materials, Recharts strokes — read the computed value through `readToken()` in `src/theme/tokens.ts`, so there is still exactly one definition of each value.
+## License
 
-Tailwind v4 has no `--duration-*` theme namespace, so timing is expressed through the `motion-fast` / `motion-base` / `motion-slow` utilities rather than raw `duration-150` classes. All of them collapse to `0ms` under `prefers-reduced-motion`, including the 3D auto-orbit and the hotspot pulse.
-
-## Scripts
-
-| Script | |
-| ------ | - |
-| `npm run dev` | API and Vite together |
-| `npm run build` | Typecheck then build the client to `dist/` |
-| `npm start` | Express only; serves `dist/` when it exists |
-| `npm run preview` | Build then serve on one port |
-| `npm run typecheck` | `tsc -b` across client, server and tooling |
-
-## Layout
-
-```
-shared/types.ts        contract shared by API and client
-server/
-  db/                  schema · client · migrate · seed · queries
-  routes/              overview · sites · assets · alerts · analytics
-  services/weather.ts  Open-Meteo client with cache
-src/
-  styles/tokens.css    THE theme file
-  theme/tokens.ts      runtime token access + design-system catalogue
-  components/ui/       shadcn/ui primitives on Radix
-  components/          domain components
-  routes/              the four screens
-drizzle/               generated SQL migrations
-```
-
-## Deliberately out of scope
-
-No authentication, no roles, no tests, no extra features — this is a template for the monitoring surface itself.
+MIT — see [LICENSE](./LICENSE).
