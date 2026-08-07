@@ -1,8 +1,7 @@
 import { useEffect, useState, type ReactNode } from "react";
 import { NavLink } from "react-router";
-import { Activity, LayoutGrid, LineChart, Palette, LogOut, User, Building2 } from "lucide-react";
+import { Activity, LayoutGrid, LineChart, Palette, User, Building2 } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { useAuth } from "@/lib/auth";
 import { useCurrentOrganization } from "@/lib/organization-context";
 
 const NAV_ITEMS = [
@@ -40,8 +39,10 @@ function LiveClock() {
 }
 
 export function AppShell({ children }: { children: ReactNode }) {
-  const { user, logout } = useAuth();
   const { currentOrgId, organizations, setCurrentOrgId } = useCurrentOrganization();
+
+  // Demo mode — hardcoded user, no auth
+  const user = { email: "demo@sitesignal.io", name: "Demo User" };
 
   return (
     <div className="relative isolate flex min-h-screen flex-col">
@@ -112,14 +113,6 @@ export function AppShell({ children }: { children: ReactNode }) {
                   <User className="size-3.5" />
                   <span>{user.email}</span>
                 </div>
-                <button
-                  onClick={logout}
-                  className="inline-flex items-center gap-1.5 rounded-md px-2.5 py-1.5 text-xs font-semibold text-ink-muted transition-colors hover:bg-elevated hover:text-ink"
-                  title="Sign out"
-                >
-                  <LogOut className="size-3.5" />
-                  <span className="hidden sm:inline">Sign out</span>
-                </button>
               </div>
             )}
           </div>

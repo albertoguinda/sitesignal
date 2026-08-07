@@ -6,7 +6,6 @@ import cookieParser from "cookie-parser";
 import { ZodError } from "zod";
 import { env } from "./env";
 import { apiRouter } from "./routes";
-import { authenticate } from "./middleware/auth";
 import { HttpError } from "./http/validation";
 import { closeDatabase } from "./db/client";
 import { runMigrations } from "./db/migrate";
@@ -116,7 +115,7 @@ async function bootstrap(): Promise<void> {
   app.use(securityHeaders);
   app.use(cookieParser());
   app.use(express.json({ limit: "64kb" }));
-  app.use(authenticate); // Add user to request if session exists
+  // authenticate middleware removed — demo mode, no auth required
 
   app.use("/api", apiRouter);
   // Every unmatched /api path terminates here with JSON, so the SPA fallback

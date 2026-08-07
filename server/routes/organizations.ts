@@ -4,9 +4,36 @@ import { sql } from "drizzle-orm";
 import { getDatabase } from "../db/client";
 import { organizations, organizationMembers, users } from "../db/schema";
 import { HttpError } from "../http/validation";
-import { requireAuth } from "../middleware/auth";
 
 export const organizationsRouter: Router = Router();
+
+// ---------------------------------------------------------------------------
+// Demo mode helpers — no auth middleware, so we find-or-create a default user
+// ---------------------------------------------------------------------------
+
+const DEMO_EMAIL = "demo@sitesignal.io";
+
+/** Find or create the default demo user and return its id. */
+async function getDemoUserId(): Promise<string> {
+  const { db } = await getDatabase();
+
+  const existing = await db
+    .select({ id: users.id })
+    .from(users)
+    .where(sql`${users.email} = ${DEMO_EMAIL}`)
+    .limit(1)
+    .then((rows) => rows[0]);
+
+  if (existing) return existing.id;
+
+  const [created] = await db
+    .insert(users)
+    .values({ email: DEMO_EMAIL, name: "Demo User" })
+    .returning({ id: users.id });
+
+  if (!created) throw new HttpError(500, "Failed to create demo user");
+  return created.id;
+}
 
 // Request schemas
 const createOrganizationSchema = z.object({
@@ -49,7 +76,7 @@ async function isMember(userId: string, orgId: string, requiredRole?: string): P
  * POST /api/organizations
  * Create a new organization.
  */
-organizationsRouter.post("/", requireAuth, async (req, res) => {
+organizationsRouter.post("/", async (req, res) => {
   const body = createOrganizationSchema.parse(req.body);
   const { db } = await getDatabase();
 
@@ -74,10 +101,11 @@ organizationsRouter.post("/", requireAuth, async (req, res) => {
     throw new HttpError(500, "Failed to create organization");
   }
 
-  // Add creator as admin
+  // Add creator as admin (demo mode — always the demo user)
+  const demoUserId = await getDemoUserId();
   await db.insert(organizationMembers).values({
     organizationId: org.id,
-    userId: req.user!.id,
+    userId: demoUserId,
     role: "admin",
     joinedAt: new Date(),
   });
@@ -89,7 +117,7 @@ organizationsRouter.post("/", requireAuth, async (req, res) => {
  * GET /api/organizations
  * List organizations the user belongs to.
  */
-organizationsRouter.get("/", requireAuth, async (req, res) => {
+organizationsRouter.get("/", async (_req, res) => {
   const { db } = await getDatabase();
 
   const orgs = await db
@@ -106,7 +134,7 @@ organizationsRouter.get("/", requireAuth, async (req, res) => {
       organizationMembers,
       sql`${organizations.id} = ${organizationMembers.organizationId}`
     )
-    .where(sql`${organizationMembers.userId} = ${req.user!.id}`)
+    .where(sql`${organizationMembers.userId} = ${await getDemoUserId()}`)
     .orderBy(organizations.name);
 
   res.json(orgs);
@@ -116,12 +144,13 @@ organizationsRouter.get("/", requireAuth, async (req, res) => {
  * GET /api/organizations/:id
  * Get organization details.
  */
-organizationsRouter.get("/:id", requireAuth, async (req, res) => {
+organizationsRouter.get("/:id", async (req, res) => {
   const id = req.params.id as string;
   const { db } = await getDatabase();
 
-  // Check membership
-  if (!(await isMember(req.user!.id, id))) {
+  // Check membership (demo mode — always the demo user)
+  const demoUserId = await getDemoUserId();
+  if (!(await isMember(demoUserId, id))) {
     throw new HttpError(403, "Not a member of this organization");
   }
 
@@ -158,12 +187,13 @@ organizationsRouter.get("/:id", requireAuth, async (req, res) => {
  * PUT /api/organizations/:id
  * Update organization details.
  */
-organizationsRouter.put("/:id", requireAuth, async (req, res) => {
+organizationsRouter.put("/:id", async (req, res) => {
   const id = req.params.id as string;
   const { db } = await getDatabase();
 
-  // Check admin permission
-  if (!(await isMember(req.user!.id, id, "admin"))) {
+  // Check admin permission (demo mode — always the demo user)
+  const demoUserId = await getDemoUserId();
+  if (!(await isMember(demoUserId, id, "admin"))) {
     throw new HttpError(403, "Admin permission required");
   }
 
@@ -186,12 +216,13 @@ organizationsRouter.put("/:id", requireAuth, async (req, res) => {
  * DELETE /api/organizations/:id
  * Delete an organization.
  */
-organizationsRouter.delete("/:id", requireAuth, async (req, res) => {
+organizationsRouter.delete("/:id", async (req, res) => {
   const id = req.params.id as string;
   const { db } = await getDatabase();
 
-  // Check admin permission
-  if (!(await isMember(req.user!.id, id, "admin"))) {
+  // Check admin permission (demo mode — always the demo user)
+  const demoUserId = await getDemoUserId();
+  if (!(await isMember(demoUserId, id, "admin"))) {
     throw new HttpError(403, "Admin permission required");
   }
 
@@ -204,13 +235,14 @@ organizationsRouter.delete("/:id", requireAuth, async (req, res) => {
  * POST /api/organizations/:id/invite
  * Invite a member to the organization.
  */
-organizationsRouter.post("/:id/invite", requireAuth, async (req, res) => {
+organizationsRouter.post("/:id/invite", async (req, res) => {
   const id = req.params.id as string;
   const body = inviteMemberSchema.parse(req.body);
   const { db } = await getDatabase();
 
-  // Check admin permission
-  if (!(await isMember(req.user!.id, id, "admin"))) {
+  // Check admin permission (demo mode — always the demo user)
+  const demoUserId = await getDemoUserId();
+  if (!(await isMember(demoUserId, id, "admin"))) {
     throw new HttpError(403, "Admin permission required");
   }
 
@@ -254,13 +286,14 @@ organizationsRouter.post("/:id/invite", requireAuth, async (req, res) => {
  * DELETE /api/organizations/:id/members/:memberId
  * Remove a member from the organization.
  */
-organizationsRouter.delete("/:id/members/:memberId", requireAuth, async (req, res) => {
+organizationsRouter.delete("/:id/members/:memberId", async (req, res) => {
   const id = req.params.id as string;
   const memberId = req.params.memberId as string;
   const { db } = await getDatabase();
 
-  // Check admin permission or self-removal
-  const isAdminController = await isMember(req.user!.id, id, "admin");
+  // Check admin permission or self-removal (demo mode — always the demo user)
+  const demoUserId = await getDemoUserId();
+  const isAdminController = await isMember(demoUserId, id, "admin");
   const membership = await db
     .select()
     .from(organizationMembers)
@@ -272,7 +305,7 @@ organizationsRouter.delete("/:id/members/:memberId", requireAuth, async (req, re
     throw new HttpError(404, "Member not found");
   }
 
-  if (!isAdminController && membership.userId !== req.user!.id) {
+  if (!isAdminController && membership.userId !== demoUserId) {
     throw new HttpError(403, "Admin permission required");
   }
 
