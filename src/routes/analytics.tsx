@@ -29,6 +29,7 @@ import { chartColor } from "@/theme/tokens";
 import { useAnalytics, useAssets, useSites } from "@/lib/api";
 import { metricLabel, splitAssetName } from "@/lib/format";
 import { cn } from "@/lib/utils";
+import { useCurrentOrganization } from "@/lib/organization-context";
 
 /** The API caps a comparison at six series; the picker enforces the same limit. */
 const MAX_SERIES = 6;
@@ -45,9 +46,10 @@ export default function AnalyticsPage() {
   const [metric, setMetric] = useState<Metric>("temperature");
   const [range, setRange] = useState<RangeKey>("7d");
   const [selectedIds, setSelectedIds] = useState<number[]>([]);
+  const { currentOrgId } = useCurrentOrganization();
 
-  const sites = useSites();
-  const assets = useAssets(siteId);
+  const sites = useSites(currentOrgId);
+  const assets = useAssets(siteId, currentOrgId);
 
   /** Only assets that actually report the chosen metric can be compared on it. */
   const candidates = useMemo(

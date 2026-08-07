@@ -121,7 +121,12 @@ function mapAssetRow(record: AssetRowRecord): AssetRow {
   };
 }
 
-export async function listSites(): Promise<Site[]> {
+export async function listSites(organizationId?: string): Promise<Site[]> {
+  if (organizationId) {
+    return query<Site>(
+      sql`select id, name, lat, lng, timezone from sites where organization_id = ${organizationId} order by name`
+    );
+  }
   return query<Site>(sql`select id, name, lat, lng, timezone from sites order by name`);
 }
 
@@ -140,10 +145,14 @@ export async function getSite(siteId: number): Promise<Site | null> {
 export async function listAssetRows(filter: {
   siteId?: number | undefined;
   assetId?: number | undefined;
+  organizationId?: string | undefined;
 }): Promise<AssetRow[]> {
   const conditions: SQL[] = [];
   if (filter.siteId !== undefined) conditions.push(sql`a.site_id = ${filter.siteId}`);
   if (filter.assetId !== undefined) conditions.push(sql`a.id = ${filter.assetId}`);
+  if (filter.organizationId !== undefined) {
+    conditions.push(sql`s.organization_id = ${filter.organizationId}`);
+  }
   const where = conditions.length ? sql`where ${sql.join(conditions, sql` and `)}` : sql``;
 
   const records = await query<AssetRowRecord>(sql`
@@ -203,10 +212,17 @@ interface KpiRecord {
   readings_24h: number;
 }
 
-export async function getOverviewKpis(siteId?: number): Promise<OverviewKpis> {
+export async function getOverviewKpis(siteId?: number, organizationId?: string): Promise<OverviewKpis> {
   // A single always-true predicate keeps every scoped sub-select uniform:
   // `where <scope> and <condition>` composes without branching on `where`/`and`.
-  const scope = siteId === undefined ? sql`true` : sql`a.site_id = ${siteId}`;
+  let scope: SQL;
+  if (siteId !== undefined) {
+    scope = sql`a.site_id = ${siteId}`;
+  } else if (organizationId !== undefined) {
+    scope = sql`s.organization_id = ${organizationId}`;
+  } else {
+    scope = sql`true`;
+  }
 
   const [counts] = await query<KpiRecord>(sql`
     select
@@ -273,11 +289,15 @@ export async function listAlerts(options: {
   assetId?: number | undefined;
   state?: Alert["state"] | undefined;
   limit?: number | undefined;
+  organizationId?: string | undefined;
 }): Promise<AlertWithAsset[]> {
   const conditions: SQL[] = [];
   if (options.siteId !== undefined) conditions.push(sql`a.site_id = ${options.siteId}`);
   if (options.assetId !== undefined) conditions.push(sql`al.asset_id = ${options.assetId}`);
   if (options.state !== undefined) conditions.push(sql`al.state = ${options.state}`);
+  if (options.organizationId !== undefined) {
+    conditions.push(sql`s.organization_id = ${options.organizationId}`);
+  }
   const where = conditions.length ? sql`where ${sql.join(conditions, sql` and `)}` : sql``;
   const limit = options.limit ?? 50;
 

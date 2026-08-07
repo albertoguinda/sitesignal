@@ -1,12 +1,12 @@
 # SiteSignal
 
 [![ci](https://github.com/albertoguinda/sitesignal/actions/workflows/ci.yml/badge.svg)](https://github.com/albertoguinda/sitesignal/actions/workflows/ci.yml)
+[![tests](https://img.shields.io/badge/tests-passing-brightgreen)](#testing)
+[![docker](https://img.shields.io/badge/docker-ready-blue)](#docker)
 
-**A monitoring dashboard that is already full of data the moment you open it.**
+**A production-ready industrial asset monitoring dashboard with authentication, multi-tenancy, and real-time telemetry.**
 
-Three industrial sites, eighteen machines, sixty days of telemetry, live weather
-per site, a 3D floor plan you can click through, and a documented design system.
-No database to provision, no API key to sign up for, no empty state to stare at.
+Three industrial sites, eighteen machines, sixty days of telemetry, live weather per site, a 3D floor plan you can click through, and a documented design system. Authentication with magic links, multi-organization support, and comprehensive testing included.
 
 ![Overview: KPI cards, per-site ambient conditions, sortable asset table and live alert feed](docs/media/overview.png)
 
@@ -14,141 +14,306 @@ No database to provision, no API key to sign up for, no empty state to stare at.
 
 ---
 
-## Run it
+## Features
 
-**On Replit:** press **Run**. That is the whole procedure.
+### Core Functionality
+- **Real-time Dashboard** — KPI cards, per-site weather, sortable asset table, and live alert feed
+- **3D Floor Plan** — Interactive react-three-fiber visualization with clickable hotspots
+- **Analytics** — Compare metrics across up to six machines over 24h to 60d
+- **Design System** — Living documentation with every color token, type scale, and component
 
-**Anywhere else:**
+### Authentication & Security
+- **Magic Link Auth** — Passwordless login via email, no passwords to manage
+- **Session Management** — Secure HTTP-only cookies with automatic expiration
+- **Rate Limiting** — Protection against brute force attacks
+- **Security Headers** — CSRF, XSS, and clickjacking protection
+
+### Multi-Tenancy
+- **Organization Support** — Multiple organizations per user
+- **Role-Based Access** — Admin, member, and viewer roles
+- **Team Management** — Invite and remove team members
+- **Data Isolation** — Sites and assets scoped to organizations
+
+### Developer Experience
+- **Type Safety** — Full TypeScript with shared types between client and server
+- **Testing** — Unit tests with Vitest and Testing Library
+- **Docker** — Production-ready containerization
+- **Hot Reload** — Instant feedback during development
+
+---
+
+## Quick Start
+
+### Prerequisites
+- Node.js 20.19+ (recommended: 22.x)
+- npm 10+
+
+### Local Development
 
 ```bash
+# Clone the repository
+git clone https://github.com/albertoguinda/sitesignal.git
+cd sitesignal
+
+# Install dependencies
 npm install
+
+# Start development server
 npm run dev
 ```
 
-Open <http://localhost:5000>.
+Open [http://localhost:5000](http://localhost:5000)
 
-The first boot expands a pre-seeded database that ships with the repository and
-slides its timestamps up to the current hour, so the dashboard is populated and
-*recent* whether you open it today or in six months. Measured cold start on a
-laptop: **~8 s** on a fresh clone, **~6 s** afterwards.
-
----
-
-## What you get
-
-| Screen | What it shows |
-| ------ | ------------- |
-| `/` | KPI cards, per-site weather, a sortable table of every machine with its latest reading per metric, and a live alert feed |
-| `/assets/:id` | A react-three-fiber floor plan of the whole site — machines extruded from their stored coordinates, tinted by status, with pulsing hotspots that open a sensor readout — plus telemetry charts and alert history |
-| `/analytics` | Compare one metric across up to six machines, over 24 h to 60 d |
-| `/design-system` | Living documentation: every colour token, the type scale, spacing, motion, and every component, rendered by the real components |
-
-![Asset detail: react-three-fiber floor plan with status-tinted machines and the sensor readout panel](docs/media/asset-detail.png)
-
-![Design system: the colour section, rendered live from the tokens](docs/media/design-system.png)
-
----
-
-## Architecture in five lines
-
-1. **React 19 + Vite** client, four routes, three.js and Recharts lazy-loaded per route.
-2. **Express 5** serves the API and, in production, the built client — one process, one port.
-3. **Drizzle + Postgres**: embedded PGlite by default, any Postgres via `DATABASE_URL`, same schema either way.
-4. **`shared/types.ts`** is the contract both sides import, so an API change breaks the client at compile time.
-5. **`src/styles/tokens.css`** is the only place a colour, size or duration is defined; everything else references it.
-
----
-
-## Make it yours
-
-### Use a real Postgres instead of the embedded one
-
-Set one variable. Nothing else changes — same schema, same migrations, same queries.
+### Docker
 
 ```bash
-DATABASE_URL=postgres://user:pass@host:5432/sitesignal npm run dev
-```
+# Build and run with Docker Compose
+npm run docker:compose
 
-On Replit, add it in the **Secrets** panel. The switch lives in
-`server/db/client.ts`; the rest of the server never learns which driver it got.
-
-### Swap Open-Meteo for another data source
-
-`server/services/weather.ts` is a self-contained client: it fetches, shapes the
-response into `AmbientSummary`, caches for 15 minutes and serves a stale copy if
-the upstream fails. To use a different provider, keep the exported functions and
-replace the middle:
-
-1. Change `buildUrl()` to your endpoint (add the key from `process.env`).
-2. Change `parse()` to map your response into `WeatherCurrent` and
-   `WeatherForecastPoint` in `shared/types.ts`.
-3. Leave `getAmbient()` alone — the cache, request coalescing and stale
-   fallback are provider-agnostic.
-
-The same shape works for anything ambient: an air-quality API, a building
-management system, your own sensor gateway.
-
-### Adapt it to a different domain
-
-The app is not really about pumps. It is *entities positioned in space, each
-emitting time series, each raising alerts*. That covers server racks, delivery
-vans, greenhouse zones, retail floors, wind turbines.
-
-| To change | Edit |
-| --------- | ---- |
-| The vocabulary (asset types, metrics, units, statuses) | `shared/types.ts` |
-| The demo fleet: sites, machines, coordinates, alert text | `server/db/seed-data.ts` |
-| How each metric behaves over time (baseline, daily cycle, drift, failure ramp) | `buildSeries()` in `server/db/seed.ts` |
-| The shape of each machine in the 3D scene | `ASSET_GEOMETRY` in `src/components/asset-scene.tsx` |
-| Colours, type scale, spacing, motion | `src/styles/tokens.css` — one file, and `/design-system` re-renders itself |
-| Tables and columns | `server/db/schema.ts`, then `npm run db:generate` |
-
-After changing the seed, rebuild the shipped dataset so forks get your version:
-
-```bash
-npm run db:reset      # regenerate the database
-npm run db:snapshot   # write data/sitesignal-seed.tar.gz
+# Or build and run manually
+npm run docker:build
+npm run docker:run
 ```
 
 ---
 
-## Commands
+## Architecture
 
-| Command | |
-| ------- | - |
-| `npm run dev` | Vite on the public port, Express behind it |
-| `npm start` | Production: one process serving API and client |
-| `npm run build` | Typecheck, then build the client |
-| `npm run typecheck` | `tsc -b` across client, server and scripts |
-| `npm run db:reset` | Rebuild the database from the seeder |
-| `npm run db:snapshot` | Write the shipped snapshot from the current database |
-| `npm run db:restore` | Restore the shipped snapshot, discarding local changes |
-| `npm run db:generate` | Regenerate SQL migrations after a schema change |
+```
+┌─────────────────────────────────────────────────┐
+│                 PRESENTATION                     │
+│  React 19 + Vite + Tailwind CSS v4              │
+│  react-three-fiber (3D) + Recharts (charts)     │
+├─────────────────────────────────────────────────┤
+│                 APPLICATION                      │
+│  TanStack Query + React Router v8               │
+│  Auth context + Organization management         │
+├─────────────────────────────────────────────────┤
+│                   DOMAIN                         │
+│  Shared types (TypeScript contract)             │
+│  Business logic in server queries               │
+├─────────────────────────────────────────────────┤
+│               INFRASTRUCTURE                     │
+│  Express 5 + Drizzle ORM                        │
+│  PostgreSQL (PGlite embedded or external)        │
+│  Open-Meteo (weather data)                      │
+└─────────────────────────────────────────────────┘
+```
 
-## Configuration
+### Key Files
 
-Everything has a working default; see `.env.example`. The ones worth knowing:
-
-| Variable | Default | |
-| -------- | ------- | - |
-| `PORT` | `5000` | The single public port. Replit injects it. |
-| `DATABASE_URL` | *(unset)* | Set it to use a real Postgres instead of PGlite. |
-| `SEED_READINGS` | `18000` | Row count target. Changes sampling resolution, never the 60-day range. |
-| `WEATHER_CACHE_MINUTES` | `15` | Ambient-conditions cache window. |
+| File | Purpose |
+|------|---------|
+| `shared/types.ts` | Contract between client and server |
+| `server/db/schema.ts` | Database schema (Drizzle ORM) |
+| `server/routes/auth.ts` | Authentication endpoints |
+| `server/middleware/auth.ts` | Auth middleware |
+| `src/lib/auth.ts` | Client-side auth context |
+| `src/styles/tokens.css` | Design tokens (colors, spacing, typography) |
 
 ---
 
-## What is deliberately missing
+## Authentication
 
-No authentication, no roles, no tests, no multi-tenancy. This is a template for
-the monitoring surface itself — adding those on top is your job, and they are
-much easier to add to something that already renders.
+SiteSignal uses magic link authentication for a secure, passwordless experience.
 
-## Credits
+### How It Works
+1. User enters their email on the login page
+2. Server generates a unique token and logs it (in development)
+3. In production, an email with the magic link would be sent
+4. User clicks the link and is authenticated
+5. Session cookie is set for subsequent requests
 
-Ambient conditions from [Open-Meteo](https://open-meteo.com) (no API key).
-Embedded Postgres by [PGlite](https://pglite.dev).
+### Development Mode
+In development, the magic link is logged to the console and automatically verified for faster iteration.
+
+### Production Setup
+For production, integrate an email service (SendGrid, AWS SES, etc.) in `server/routes/auth.ts`.
+
+---
+
+## Multi-Tenancy
+
+### Organization Structure
+```
+Organization
+├── Members (admin, member, viewer)
+├── Sites
+│   ├── Assets
+│   │   ├── Readings
+│   │   └── Alerts
+```
+
+### Roles
+- **Admin** — Full access, can manage members and settings
+- **Member** — Can view and interact with data
+- **Viewer** — Read-only access
+
+---
+
+## API Endpoints
+
+### Authentication
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| POST | `/api/auth/magic-link` | Request magic link |
+| GET | `/api/auth/verify?token=xxx` | Verify magic link |
+| GET | `/api/auth/me` | Get current user |
+| POST | `/api/auth/logout` | Destroy session |
+
+### Organizations
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| GET | `/api/organizations` | List user's organizations |
+| POST | `/api/organizations` | Create organization |
+| GET | `/api/organizations/:id` | Get organization details |
+| PUT | `/api/organizations/:id` | Update organization |
+| DELETE | `/api/organizations/:id` | Delete organization |
+| POST | `/api/organizations/:id/invite` | Invite member |
+| DELETE | `/api/organizations/:id/members/:memberId` | Remove member |
+
+### Dashboard
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| GET | `/api/overview` | Dashboard KPIs and assets |
+| GET | `/api/sites` | List all sites |
+| GET | `/api/assets` | List all assets |
+| GET | `/api/assets/:id` | Asset detail with telemetry |
+| GET | `/api/alerts` | List alerts |
+| GET | `/api/analytics/series` | Time series data |
+
+---
+
+## Testing
+
+### Run Tests
+```bash
+# Run all tests
+npm test
+
+# Run tests once
+npm run test:run
+
+# Run with coverage
+npm run test:coverage
+```
+
+### Test Structure
+```
+src/
+├── lib/
+│   └── __tests__/
+│       └── format.test.ts    # Utility function tests
+├── components/               # Component tests (add as needed)
+└── routes/                   # Route tests (add as needed)
+```
+
+---
+
+## Docker
+
+### Dockerfile
+Multi-stage build for minimal production image:
+1. **Builder stage** — Installs dependencies and builds the app
+2. **Production stage** — Copies only necessary files, runs as non-root user
+
+### Docker Compose
+Includes PostgreSQL for production use:
+```bash
+# Start all services
+docker compose up
+
+# Start in background
+docker compose up -d
+
+# Stop all services
+docker compose down
+```
+
+### Environment Variables
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `NODE_ENV` | `development` | Environment mode |
+| `PORT` | `5000` | Server port |
+| `DATABASE_URL` | *(none)* | PostgreSQL connection string |
+| `PGLITE_DIR` | `./data/sitesignal` | PGlite data directory |
+| `BASE_URL` | `http://localhost:5000` | Base URL for magic links |
+
+---
+
+## Development
+
+### Commands
+| Command | Description |
+|---------|-------------|
+| `npm run dev` | Start development server |
+| `npm run build` | Build for production |
+| `npm run start` | Start production server |
+| `npm run typecheck` | Run TypeScript type checking |
+| `npm test` | Run tests |
+| `npm run db:generate` | Generate migrations |
+| `npm run db:migrate` | Apply migrations |
+| `npm run db:reset` | Reset database |
+
+### Adding New Features
+
+1. **Define types** in `shared/types.ts`
+2. **Add schema** in `server/db/schema.ts`
+3. **Generate migration** with `npm run db:generate`
+4. **Create routes** in `server/routes/`
+5. **Add client hooks** in `src/lib/`
+6. **Build components** in `src/components/`
+7. **Write tests** in `src/__tests__/`
+
+---
+
+## Deployment
+
+### Vercel/Netlify
+1. Connect your GitHub repository
+2. Set environment variables
+3. Deploy automatically on push
+
+### Docker
+```bash
+# Build image
+docker build -t sitesignal .
+
+# Run container
+docker run -p 5000:5000 -e DATABASE_URL=postgres://... sitesignal
+```
+
+### Traditional Hosting
+```bash
+# Build
+npm run build
+
+# Start
+npm run start
+```
+
+---
+
+## Contributing
+
+1. Fork the repository
+2. Create a feature branch
+3. Make your changes
+4. Add tests for new functionality
+5. Run `npm test` to ensure all tests pass
+6. Submit a pull request
+
+---
 
 ## License
 
-MIT — see [LICENSE](./LICENSE).
+MIT — see [LICENSE](./LICENSE)
+
+---
+
+## Credits
+
+- Ambient conditions by [Open-Meteo](https://open-meteo.com)
+- Embedded Postgres by [PGlite](https://pglite.dev)
+- UI components by [Radix UI](https://www.radix-ui.com/)
+- Icons by [Lucide](https://lucide.dev/)

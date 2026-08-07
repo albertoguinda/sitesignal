@@ -11,6 +11,7 @@ import { ErrorState, SkeletonRows } from "@/components/states";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useOverview, useSites } from "@/lib/api";
 import { formatCompact, formatNumber } from "@/lib/format";
+import { useCurrentOrganization } from "@/lib/organization-context";
 
 /** `?site=3` keeps the selected scope in the URL so a view can be shared. */
 function useSiteScope(): [number | undefined, (siteId: number | undefined) => void] {
@@ -31,8 +32,9 @@ function useSiteScope(): [number | undefined, (siteId: number | undefined) => vo
 
 export default function OverviewPage() {
   const [siteId, setSiteId] = useSiteScope();
-  const sites = useSites();
-  const overview = useOverview(siteId);
+  const { currentOrgId } = useCurrentOrganization();
+  const sites = useSites(currentOrgId);
+  const overview = useOverview(siteId, currentOrgId);
 
   const kpis = overview.data?.kpis;
   const temperature = kpis?.averages.find((entry) => entry.metric === "temperature");

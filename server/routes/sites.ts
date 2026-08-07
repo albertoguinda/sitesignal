@@ -5,13 +5,15 @@ import { HttpError, idParamSchema, parseOrThrow } from "../http/validation";
 
 export const sitesRouter: Router = Router();
 
-sitesRouter.get("/", async (_req, res) => {
-  res.json(await listSites());
+sitesRouter.get("/", async (req, res) => {
+  const organizationId = req.query.orgId as string | undefined;
+  res.json(await listSites(organizationId));
 });
 
 /** Ambient conditions for every site, in one call, for the overview header. */
-sitesRouter.get("/ambient", async (_req, res) => {
-  const sites = await listSites();
+sitesRouter.get("/ambient", async (req, res) => {
+  const organizationId = req.query.orgId as string | undefined;
+  const sites = await listSites(organizationId);
   res.json(await getAmbientForSites(sites));
 });
 

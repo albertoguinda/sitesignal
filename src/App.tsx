@@ -1,8 +1,11 @@
-import { lazy, Suspense } from "react";
-import { Route, Routes } from "react-router";
+import { lazy } from "react";
+import { Route, Routes, Navigate } from "react-router";
 import { AppShell } from "@/components/app-shell";
+import { AuthProvider, useAuth } from "@/lib/auth";
+import { OrganizationProvider } from "@/lib/organization-context";
 import { Skeleton } from "@/components/ui/skeleton";
 import OverviewPage from "@/routes/overview";
+import LoginPage from "@/routes/login";
 
 // three.js and Recharts only load on the routes that need them.
 const AssetDetailPage = lazy(() => import("@/routes/asset-detail"));
@@ -24,18 +27,61 @@ function RouteFallback() {
   );
 }
 
+function ProtectedRoute({ children }: { children: React.ReactNode }) {
+  const { isAuthenticated, isLoading } = useAuth();
+
+  if (isLoading) {
+    return <RouteFallback />;
+  }
+
+  if (!isAuthenticated) {
+    return <Navigate to="/login" replace />;
+  }
+
+  return <AppShell>{children}</AppShell>;
+}
+
 export default function App() {
   return (
-    <AppShell>
-      <Suspense fallback={<RouteFallback />}>
+    <AuthProvider>
+      <OrganizationProvider>
         <Routes>
-          <Route path="/" element={<OverviewPage />} />
-          <Route path="/assets/:id" element={<AssetDetailPage />} />
-          <Route path="/analytics" element={<AnalyticsPage />} />
-          <Route path="/design-system" element={<DesignSystemPage />} />
+          <Route path="/login" element={<LoginPage />} />
+          <Route
+            path="/"
+            element={
+              <ProtectedRoute>
+                <OverviewPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/assets/:id"
+            element={
+              <ProtectedRoute>
+                <AssetDetailPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/analytics"
+            element={
+              <ProtectedRoute>
+                <AnalyticsPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/design-system"
+            element={
+              <ProtectedRoute>
+                <DesignSystemPage />
+              </ProtectedRoute>
+            }
+          />
           <Route path="*" element={<NotFoundPage />} />
         </Routes>
-      </Suspense>
-    </AppShell>
+      </OrganizationProvider>
+    </AuthProvider>
   );
 }

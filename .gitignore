@@ -14,3 +14,4 @@ node_modules/.tmp/
 .upm/
 .cache/
 replit.nix.bak
+coverage/

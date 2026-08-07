@@ -12,12 +12,13 @@ export const overviewRouter: Router = Router();
  */
 overviewRouter.get("/", async (req, res) => {
   const { siteId } = parseOrThrow(overviewQuerySchema, req.query);
+  const organizationId = req.query.orgId as string | undefined;
 
   const [kpis, assets, recentAlerts, sites] = await Promise.all([
-    getOverviewKpis(siteId),
-    listAssetRows({ siteId }),
-    listAlerts({ siteId, limit: 8 }),
-    listSites(),
+    getOverviewKpis(siteId, organizationId),
+    listAssetRows({ siteId, organizationId }),
+    listAlerts({ siteId, limit: 8, organizationId }),
+    listSites(organizationId),
   ]);
 
   const scopedSites = siteId === undefined ? sites : sites.filter((site) => site.id === siteId);

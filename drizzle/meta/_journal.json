@@ -8,6 +8,20 @@
       "when": 1786084677206,
       "tag": "0000_adorable_bullseye",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1786107377422,
+      "tag": "0001_dry_steel_serpent",
+      "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1786107427560,
+      "tag": "0002_certain_famine",
+      "breakpoints": true
     }
   ]
 }

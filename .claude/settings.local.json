@@ -1,0 +1,9 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(git -C /c/dev/sitesignal log --oneline -15)",
+      "Bash(git -C /c/dev/sitesignal status --short)",
+      "Bash(git -C /c/dev/sitesignal diff --stat)"
+    ]
+  }
+}

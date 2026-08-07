@@ -1,7 +1,9 @@
 import { useEffect, useState, type ReactNode } from "react";
 import { NavLink } from "react-router";
-import { Activity, LayoutGrid, LineChart, Palette } from "lucide-react";
+import { Activity, LayoutGrid, LineChart, Palette, LogOut, User, Building2 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useAuth } from "@/lib/auth";
+import { useCurrentOrganization } from "@/lib/organization-context";
 
 const NAV_ITEMS = [
   { to: "/", label: "Overview", icon: LayoutGrid, end: true },
@@ -38,6 +40,9 @@ function LiveClock() {
 }
 
 export function AppShell({ children }: { children: ReactNode }) {
+  const { user, logout } = useAuth();
+  const { currentOrgId, organizations, setCurrentOrgId } = useCurrentOrganization();
+
   return (
     <div className="relative isolate flex min-h-screen flex-col">
       <a
@@ -79,8 +84,44 @@ export function AppShell({ children }: { children: ReactNode }) {
             ))}
           </nav>
 
-          <div className="ml-auto">
+          <div className="ml-auto flex items-center gap-4">
             <LiveClock />
+            
+            {user && (
+              <div className="flex items-center gap-3">
+                {/* Organization selector */}
+                {organizations.length > 1 && (
+                  <div className="flex items-center gap-2">
+                    <Building2 className="size-3.5 text-ink-muted" />
+                    <select
+                      value={currentOrgId ?? ""}
+                      onChange={(e) => setCurrentOrgId(e.target.value || undefined)}
+                      className="rounded-md border border-line bg-base px-2 py-1 text-xs text-ink focus:border-brand focus:outline-none focus:ring-1 focus:ring-brand"
+                      aria-label="Select organization"
+                    >
+                      {organizations.map((org) => (
+                        <option key={org.id} value={org.id}>
+                          {org.name}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                )}
+                
+                <div className="hidden items-center gap-2 text-xs text-ink-muted sm:flex">
+                  <User className="size-3.5" />
+                  <span>{user.email}</span>
+                </div>
+                <button
+                  onClick={logout}
+                  className="inline-flex items-center gap-1.5 rounded-md px-2.5 py-1.5 text-xs font-semibold text-ink-muted transition-colors hover:bg-elevated hover:text-ink"
+                  title="Sign out"
+                >
+                  <LogOut className="size-3.5" />
+                  <span className="hidden sm:inline">Sign out</span>
+                </button>
+              </div>
+            )}
           </div>
         </div>
       </header>

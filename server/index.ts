@@ -2,8 +2,11 @@ import { existsSync, rmSync } from "node:fs";
 import { resolve } from "node:path";
 import express, { type ErrorRequestHandler, type RequestHandler } from "express";
 import compression from "compression";
+import cookieParser from "cookie-parser";
+import { ZodError } from "zod";
 import { env } from "./env";
 import { apiRouter } from "./routes";
+import { authenticate } from "./middleware/auth";
 import { HttpError } from "./http/validation";
 import { closeDatabase } from "./db/client";
 import { runMigrations } from "./db/migrate";
@@ -31,6 +34,13 @@ const errorHandler: ErrorRequestHandler = (error, _req, res, _next) => {
   if (error instanceof HttpError) {
     const body: ApiError = { error: error.message, ...(error.detail && { detail: error.detail }) };
     res.status(error.status).json(body);
+    return;
+  }
+
+  if (error instanceof ZodError) {
+    const messages = error.issues.map((i) => i.message).join(", ");
+    const body: ApiError = { error: messages };
+    res.status(400).json(body);
     return;
   }
 
@@ -104,7 +114,9 @@ async function bootstrap(): Promise<void> {
   app.disable("x-powered-by");
   app.use(compression());
   app.use(securityHeaders);
+  app.use(cookieParser());
   app.use(express.json({ limit: "64kb" }));
+  app.use(authenticate); // Add user to request if session exists
 
   app.use("/api", apiRouter);
   // Every unmatched /api path terminates here with JSON, so the SPA fallback

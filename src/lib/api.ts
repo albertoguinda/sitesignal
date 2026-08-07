@@ -44,17 +44,15 @@ async function request<T>(path: string, signal?: AbortSignal): Promise<T> {
   return (await response.json()) as T;
 }
 
-/** `undefined` means "all sites"; the API treats a missing param the same way. */
-function siteParam(siteId: number | undefined): string {
-  return siteId === undefined ? "" : `?siteId=${siteId}`;
-}
-
 export const queryKeys = {
-  sites: ["sites"] as const,
-  overview: (siteId: number | undefined) => ["overview", siteId ?? "all"] as const,
-  assets: (siteId: number | undefined) => ["assets", siteId ?? "all"] as const,
+  sites: (orgId: string | undefined) => ["sites", orgId ?? "all"] as const,
+  overview: (siteId: number | undefined, orgId: string | undefined) =>
+    ["overview", siteId ?? "all", orgId ?? "all"] as const,
+  assets: (siteId: number | undefined, orgId: string | undefined) =>
+    ["assets", siteId ?? "all", orgId ?? "all"] as const,
   asset: (id: number, range: RangeKey) => ["asset", id, range] as const,
-  alerts: (siteId: number | undefined) => ["alerts", siteId ?? "all"] as const,
+  alerts: (siteId: number | undefined, orgId: string | undefined) =>
+    ["alerts", siteId ?? "all", orgId ?? "all"] as const,
   ambient: (siteId: number) => ["ambient", siteId] as const,
   analytics: (assetIds: number[], metric: Metric, range: RangeKey) =>
     ["analytics", assetIds.join(","), metric, range] as const,
@@ -64,27 +62,46 @@ export const queryKeys = {
 const AMBIENT_STALE_MS = 15 * 60 * 1000;
 const TELEMETRY_STALE_MS = 60 * 1000;
 
-export function useSites(): UseQueryResult<Site[]> {
+export function useSites(orgId: string | undefined): UseQueryResult<Site[]> {
   return useQuery({
-    queryKey: queryKeys.sites,
-    queryFn: ({ signal }) => request<Site[]>("/sites", signal),
+    queryKey: queryKeys.sites(orgId),
+    queryFn: ({ signal }) =>
+      request<Site[]>(`/sites${orgId ? `?orgId=${orgId}` : ""}`, signal),
     staleTime: Number.POSITIVE_INFINITY,
   });
 }
 
-export function useOverview(siteId: number | undefined): UseQueryResult<OverviewResponse> {
+export function useOverview(
+  siteId: number | undefined,
+  orgId: string | undefined,
+): UseQueryResult<OverviewResponse> {
+  const params = new URLSearchParams();
+  if (siteId !== undefined) params.set("siteId", String(siteId));
+  if (orgId !== undefined) params.set("orgId", orgId);
+  const qs = params.toString();
+
   return useQuery({
-    queryKey: queryKeys.overview(siteId),
-    queryFn: ({ signal }) => request<OverviewResponse>(`/overview${siteParam(siteId)}`, signal),
+    queryKey: queryKeys.overview(siteId, orgId),
+    queryFn: ({ signal }) =>
+      request<OverviewResponse>(`/overview${qs ? `?${qs}` : ""}`, signal),
     staleTime: TELEMETRY_STALE_MS,
     refetchInterval: TELEMETRY_STALE_MS,
   });
 }
 
-export function useAssets(siteId: number | undefined): UseQueryResult<AssetRow[]> {
+export function useAssets(
+  siteId: number | undefined,
+  orgId: string | undefined,
+): UseQueryResult<AssetRow[]> {
+  const params = new URLSearchParams();
+  if (siteId !== undefined) params.set("siteId", String(siteId));
+  if (orgId !== undefined) params.set("orgId", orgId);
+  const qs = params.toString();
+
   return useQuery({
-    queryKey: queryKeys.assets(siteId),
-    queryFn: ({ signal }) => request<AssetRow[]>(`/assets${siteParam(siteId)}`, signal),
+    queryKey: queryKeys.assets(siteId, orgId),
+    queryFn: ({ signal }) =>
+      request<AssetRow[]>(`/assets${qs ? `?${qs}` : ""}`, signal),
     staleTime: TELEMETRY_STALE_MS,
   });
 }
@@ -99,10 +116,19 @@ export function useAsset(id: number, range: RangeKey): UseQueryResult<AssetDetai
   });
 }
 
-export function useAlerts(siteId: number | undefined): UseQueryResult<AlertWithAsset[]> {
+export function useAlerts(
+  siteId: number | undefined,
+  orgId: string | undefined,
+): UseQueryResult<AlertWithAsset[]> {
+  const params = new URLSearchParams();
+  if (siteId !== undefined) params.set("siteId", String(siteId));
+  if (orgId !== undefined) params.set("orgId", orgId);
+  const qs = params.toString();
+
   return useQuery({
-    queryKey: queryKeys.alerts(siteId),
-    queryFn: ({ signal }) => request<AlertWithAsset[]>(`/alerts${siteParam(siteId)}`, signal),
+    queryKey: queryKeys.alerts(siteId, orgId),
+    queryFn: ({ signal }) =>
+      request<AlertWithAsset[]>(`/alerts${qs ? `?${qs}` : ""}`, signal),
     staleTime: TELEMETRY_STALE_MS,
   });
 }
