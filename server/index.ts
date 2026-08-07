@@ -1,4 +1,4 @@
-import { existsSync } from "node:fs";
+import { existsSync, rmSync } from "node:fs";
 import { resolve } from "node:path";
 import express, { type ErrorRequestHandler, type RequestHandler } from "express";
 import compression from "compression";
@@ -8,6 +8,8 @@ import { HttpError } from "./http/validation";
 import { closeDatabase } from "./db/client";
 import { runMigrations } from "./db/migrate";
 import { seedDatabase } from "./db/seed";
+import { hasLiveDataDir, hasSnapshot, restoreSnapshot } from "./db/snapshot";
+import { refreshDataRecency } from "./db/recency";
 import type { ApiError } from "../shared/types";
 
 const DIST_DIR = resolve(process.cwd(), "dist");
@@ -37,17 +39,66 @@ const errorHandler: ErrorRequestHandler = (error, _req, res, _next) => {
   res.status(500).json(body);
 };
 
-async function bootstrap(): Promise<void> {
-  // Schema first, then data: a fresh clone must land on a populated dashboard,
-  // never on an empty one.
-  await runMigrations();
-  const seed = await seedDatabase();
-  if (!seed.skipped) {
-    console.log(
-      `[db] seeded ${seed.sites} sites · ${seed.assets} assets · ` +
-        `${seed.readings.toLocaleString("en-US")} readings · ${seed.alerts} alerts`,
+function logSeed(seed: Awaited<ReturnType<typeof seedDatabase>>): void {
+  if (seed.skipped) {
+    console.log("[db] existing dataset detected — skipping seed");
+    return;
+  }
+  console.log(
+    `[db] seeded ${seed.sites} sites · ${seed.assets} assets · ` +
+      `${seed.readings.toLocaleString("en-US")} readings · ${seed.alerts} alerts`,
+  );
+}
+
+/**
+ * Schema first, then data: a fresh clone must land on a populated dashboard,
+ * never on an empty one.
+ *
+ * The repository ships a pre-seeded PGlite directory so a fork boots full
+ * without paying for the seed. If that directory cannot be opened — a partial
+ * checkout, a different engine build — the embedded database is rebuilt from
+ * scratch instead of failing the boot. A configured external Postgres is never
+ * touched: that error propagates.
+ */
+async function prepareDatabase(): Promise<void> {
+  try {
+    if (env.usingEmbeddedDb && !hasLiveDataDir() && hasSnapshot()) {
+      const startedAt = Date.now();
+      await restoreSnapshot();
+      console.log(`[db] restored shipped snapshot in ${Date.now() - startedAt} ms`);
+    }
+    await runMigrations();
+    logSeed(await seedDatabase());
+    await slideDatasetForward();
+    return;
+  } catch (error) {
+    if (!env.usingEmbeddedDb) throw error;
+    console.warn(
+      `[db] embedded database unusable (${(error as Error).message}) — rebuilding from seed`,
     );
   }
+
+  try {
+    await closeDatabase();
+  } catch {
+    // Already broken; the directory is about to be removed anyway.
+  }
+  rmSync(env.pgliteDir, { recursive: true, force: true });
+
+  await runMigrations();
+  logSeed(await seedDatabase());
+  await slideDatasetForward();
+}
+
+async function slideDatasetForward(): Promise<void> {
+  const shiftHours = await refreshDataRecency();
+  if (shiftHours > 0) {
+    console.log(`[db] shipped dataset was ${shiftHours} h stale — slid forward to now`);
+  }
+}
+
+async function bootstrap(): Promise<void> {
+  await prepareDatabase();
 
   const app = express();
   app.disable("x-powered-by");

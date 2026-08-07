@@ -2,7 +2,9 @@ node_modules/
 dist/
 .env
 .env.local
-data/
+# The live PGlite cluster is generated; only the seeded snapshot is committed.
+data/*
+!data/sitesignal-seed.tar.gz
 *.local
 .DS_Store
 node_modules/.tmp/

@@ -11,9 +11,11 @@ import {
   SITE_SEEDS,
 } from "./seed-data";
 import { METRIC_UNITS, type Metric } from "../../shared/types";
+import { env } from "../env";
 
 const HOUR_MS = 3_600_000;
 const DAY_MS = 24 * HOUR_MS;
+const TOTAL_HOURS = HISTORY_DAYS * 24;
 /** Rows per INSERT. Measured sweet spot; larger statements gain nothing. */
 const INSERT_CHUNK = 2_000;
 
@@ -71,19 +73,21 @@ function buildSeries(
   status: "ok" | "warning" | "critical",
   startMs: number,
   samples: number,
+  stepHours: number,
   rand: () => number,
 ): ReadingRow[] {
   const unit = METRIC_UNITS[metric];
   const rows: ReadingRow[] = new Array<ReadingRow>(samples);
-  const degradeStart = samples - 14 * 24;
+  // The degradation ramp covers the last 14 days whatever the resolution is.
+  const degradeStart = samples - Math.round((14 * 24) / stepHours);
   const degradeGain = status === "critical" ? 0.95 : status === "warning" ? 0.4 : 0;
 
   for (let i = 0; i < samples; i += 1) {
-    const timestampMs = startMs + i * HOUR_MS;
+    const timestampMs = startMs + i * stepHours * HOUR_MS;
     const hourOfDay = new Date(timestampMs).getUTCHours();
 
     const daily = amplitude * Math.sin((2 * Math.PI * (hourOfDay - 15)) / 24);
-    const weekly = amplitude * 0.35 * Math.sin((2 * Math.PI * i) / (24 * 7));
+    const weekly = amplitude * 0.35 * Math.sin((2 * Math.PI * i * stepHours) / (24 * 7));
     const noise = amplitude * 0.16 * gaussian(rand);
 
     let degradation = 0;
@@ -116,6 +120,8 @@ export interface SeedResult {
   assets: number;
   readings: number;
   alerts: number;
+  /** Sampling step inside the fixed 60-day window, in hours. */
+  stepHours: number;
   skipped: boolean;
 }
 
@@ -129,7 +135,7 @@ export async function seedDatabase({ force = false } = {}): Promise<SeedResult> 
 
   const [existing] = await db.select({ count: sql<number>`count(*)::int` }).from(sites);
   if ((existing?.count ?? 0) > 0 && !force) {
-    return { sites: 0, assets: 0, readings: 0, alerts: 0, skipped: true };
+    return { sites: 0, assets: 0, readings: 0, alerts: 0, stepHours: 0, skipped: true };
   }
 
   if (force) {
@@ -143,8 +149,21 @@ export async function seedDatabase({ force = false } = {}): Promise<SeedResult> 
   // Align the window to the top of the current hour so the newest sample is
   // always "now-ish" and the 24 h deltas line up exactly.
   const endMs = Math.floor(Date.now() / HOUR_MS) * HOUR_MS;
-  const samples = HISTORY_DAYS * 24 + 1;
-  const startMs = endMs - (samples - 1) * HOUR_MS;
+
+  /*
+   * SEED_READINGS trades resolution, never range: the history stays 60 days
+   * and the sampling step widens to hit the requested row count. A cold start
+   * on a small container is dominated by this number, so the default is sized
+   * for "a fork boots quickly" rather than "every hour is present".
+   */
+  const seriesCount = ASSET_SEEDS.reduce(
+    (total, asset) => total + METRIC_PROFILES[asset.type].length,
+    0,
+  );
+  const targetPerSeries = Math.max(2, Math.floor(env.SEED_READINGS / seriesCount));
+  const stepHours = Math.max(1, Math.round(TOTAL_HOURS / (targetPerSeries - 1)));
+  const samples = Math.floor(TOTAL_HOURS / stepHours) + 1;
+  const startMs = endMs - (samples - 1) * stepHours * HOUR_MS;
 
   const insertedSites = await db
     .insert(sites)
@@ -207,6 +226,7 @@ export async function seedDatabase({ force = false } = {}): Promise<SeedResult> 
           asset.status,
           startMs,
           samples,
+          stepHours,
           rand,
         ),
       );
@@ -253,6 +273,7 @@ export async function seedDatabase({ force = false } = {}): Promise<SeedResult> 
     assets: insertedAssets.length,
     readings: readingRows.length,
     alerts: alertRows.length,
+    stepHours,
     skipped: false,
   };
 }
@@ -273,7 +294,8 @@ if (isDirectRun) {
       const seconds = ((Date.now() - startedAt) / 1000).toFixed(1);
       console.log(
         `[seed] ${result.sites} sites · ${result.assets} assets · ` +
-          `${result.readings.toLocaleString("en-US")} readings · ${result.alerts} alerts in ${seconds}s`,
+          `${result.readings.toLocaleString("en-US")} readings · ${result.alerts} alerts · ` +
+          `${HISTORY_DAYS} days at ${result.stepHours} h resolution in ${seconds}s`,
       );
     })
     .catch((error: unknown) => {

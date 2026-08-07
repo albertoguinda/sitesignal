@@ -1,0 +1,4 @@
+# The seeded PGlite snapshot is a gzipped tarball: git must never newline-
+# normalise it, and diffing it is meaningless.
+data/sitesignal-seed.tar.gz binary
+*.tar.gz binary
