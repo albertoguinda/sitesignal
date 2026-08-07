@@ -41,14 +41,38 @@ async function createEmbedded(): Promise<DatabaseHandle> {
   };
 }
 
+/** host:port from a connection string, never the credentials. */
+function safeHost(url: string): string {
+  try {
+    const parsed = new URL(url);
+    return parsed.port ? `${parsed.hostname}:${parsed.port}` : parsed.hostname;
+  } catch {
+    return "unparseable URL";
+  }
+}
+
 async function createPostgres(url: string): Promise<DatabaseHandle> {
   const { default: pg } = await import("pg");
   const { drizzle } = await import("drizzle-orm/node-postgres");
 
-  const pool = new pg.Pool({ connectionString: url, max: 10 });
-  // Surface connection problems at boot instead of on the first request.
-  const probe = await pool.connect();
-  probe.release();
+  // connectionTimeoutMillis matters on a container: without it an unroutable
+  // host hangs the boot instead of failing it.
+  const pool = new pg.Pool({ connectionString: url, max: 10, connectionTimeoutMillis: 5_000 });
+
+  // Surface connection problems at boot instead of on the first request, and
+  // say something the person who pasted the connection string can act on.
+  try {
+    const probe = await pool.connect();
+    probe.release();
+  } catch (error) {
+    await pool.end().catch(() => undefined);
+    const host = safeHost(url);
+    throw new Error(
+      `Cannot reach the Postgres in DATABASE_URL (${host}): ${(error as Error).message}. ` +
+        `Fix the connection string, or unset DATABASE_URL to fall back to the bundled embedded database.`,
+      { cause: error },
+    );
+  }
 
   return {
     driver: "postgres",

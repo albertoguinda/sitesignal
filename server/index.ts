@@ -146,6 +146,9 @@ async function bootstrap(): Promise<void> {
 }
 
 bootstrap().catch((error: unknown) => {
-  console.error("[api] failed to start:", error);
+  // A misconfigured external database is the common case here; print the
+  // actionable line first and keep the stack for everything else.
+  console.error(`[api] failed to start: ${(error as Error).message}`);
+  if (!(error instanceof Error) || !error.cause) console.error(error);
   process.exit(1);
 });
