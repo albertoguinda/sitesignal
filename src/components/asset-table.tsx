@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { Link } from "react-router-dom";
+import { Link } from "react-router";
 import { ArrowDown, ArrowUp, ChevronsUpDown } from "lucide-react";
 import { METRICS, type AssetRow, type Metric } from "@shared/types";
 import {

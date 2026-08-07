@@ -1,4 +1,4 @@
-import { Link } from "react-router-dom";
+import { Link } from "react-router";
 import { ArrowUpRight, Radio } from "lucide-react";
 import type { AssetRow } from "@shared/types";
 import { Badge } from "@/components/ui/badge";

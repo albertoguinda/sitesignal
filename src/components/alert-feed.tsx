@@ -1,4 +1,4 @@
-import { Link } from "react-router-dom";
+import { Link } from "react-router";
 import { BellRing } from "lucide-react";
 import type { Alert, AlertWithAsset } from "@shared/types";
 import { AlertStateBadge, SeverityBadge } from "@/components/status-badge";

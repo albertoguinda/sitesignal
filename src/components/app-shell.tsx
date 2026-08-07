@@ -1,5 +1,5 @@
 import { useEffect, useState, type ReactNode } from "react";
-import { NavLink } from "react-router-dom";
+import { NavLink } from "react-router";
 import { Activity, LayoutGrid, LineChart, Palette } from "lucide-react";
 import { cn } from "@/lib/utils";
 
