@@ -11,7 +11,9 @@ export const authRouter: Router = Router();
 // Configuration
 const MAGIC_LINK_EXPIRY_MINUTES = 15;
 const SESSION_EXPIRY_DAYS = 30;
-const BASE_URL = process.env.BASE_URL || "http://localhost:5000";
+// Replit exposes the external domain; fallback to localhost for local dev
+const BASE_URL = process.env.REPL_URL
+  || (process.env.REPLIT_DOMAINS ? `https://${process.env.REPLIT_DOMAINS}` : "http://localhost:5000");
 
 // Request schema
 const requestMagicLinkSchema = z.object({
@@ -125,8 +127,8 @@ authRouter.post("/magic-link", async (req, res) => {
 
   res.json({
     message: "Magic link sent to your email",
-    // In development, include the link for testing
-    ...(process.env.NODE_ENV === "development" && { link: magicLinkUrl }),
+    // Always include the link for demo purposes (no email service configured)
+    link: magicLinkUrl,
   });
 });
 
