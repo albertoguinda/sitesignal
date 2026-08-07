@@ -1,5 +1,7 @@
 # SiteSignal
 
+[![ci](https://github.com/albertoguinda/sitesignal/actions/workflows/ci.yml/badge.svg)](https://github.com/albertoguinda/sitesignal/actions/workflows/ci.yml)
+
 **A monitoring dashboard that is already full of data the moment you open it.**
 
 Three industrial sites, eighteen machines, sixty days of telemetry, live weather

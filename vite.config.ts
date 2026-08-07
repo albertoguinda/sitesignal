@@ -61,6 +61,9 @@ export default defineConfig({
   build: {
     outDir: "dist",
     sourcemap: false,
+    // three.js alone is ~1.1 MB minified; it is already isolated in a
+    // route-lazy chunk below, so the default 500 kB warning is just noise.
+    chunkSizeWarningLimit: 1200,
     rollupOptions: {
       output: {
         // three.js and Recharts are heavy and only needed on two routes; keeping
