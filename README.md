@@ -6,8 +6,9 @@ Three industrial sites, eighteen machines, sixty days of telemetry, live weather
 per site, a 3D floor plan you can click through, and a documented design system.
 No database to provision, no API key to sign up for, no empty state to stare at.
 
-<!-- SCREENSHOT: overview screen, 1512×950, docs/media/overview.png -->
-<!-- GIF: click a hotspot in the 3D floor plan → sensor readout panel opens, docs/media/hotspot.gif -->
+![Overview: KPI cards, per-site ambient conditions, sortable asset table and live alert feed](docs/media/overview.png)
+
+![Clicking a pulsing hotspot in the 3D floor plan updates the sensor readout panel](docs/media/hotspot.gif)
 
 ---
 
@@ -40,8 +41,9 @@ laptop: **~8 s** on a fresh clone, **~6 s** afterwards.
 | `/analytics` | Compare one metric across up to six machines, over 24 h to 60 d |
 | `/design-system` | Living documentation: every colour token, the type scale, spacing, motion, and every component, rendered by the real components |
 
-<!-- SCREENSHOT: /assets/6 with the 3D scene, docs/media/asset-detail.png -->
-<!-- SCREENSHOT: /design-system colour section, docs/media/design-system.png -->
+![Asset detail: react-three-fiber floor plan with status-tinted machines and the sensor readout panel](docs/media/asset-detail.png)
+
+![Design system: the colour section, rendered live from the tokens](docs/media/design-system.png)
 
 ---
 

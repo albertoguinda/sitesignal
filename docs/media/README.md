@@ -1,14 +1,13 @@
-# Media placeholders
+# Media
 
-The root README references these files. Drop them here and the images resolve.
+Referenced from the root README.
 
-| File | What it should show | Suggested size |
-| ---- | ------------------- | -------------- |
-| `overview.png` | `/` with all three sites in scope, KPI row and asset table visible | 1512×950 |
-| `asset-detail.png` | `/assets/6` with the 3D floor plan and the sensor readout panel | 1512×950 |
-| `design-system.png` | `/design-system`, colour section | 1512×950 |
-| `hotspot.gif` | Clicking a pulsing hotspot in the floor plan, panel updating | ≤ 8 s, ≤ 5 MB |
+| File | Shows |
+| ---- | ----- |
+| `overview.png` | `/` — KPI row, per-site ambient conditions, asset table, alert feed |
+| `asset-detail.png` | `/assets/6` — 3D floor plan with the sensor readout panel |
+| `design-system.png` | `/design-system` — colour section |
+| `hotspot.gif` | Clicking a hotspot in the floor plan, panel updating |
 
-The README embeds them as HTML comments so nothing renders broken while they
-are missing. Replace each `<!-- SCREENSHOT: ... -->` with a normal Markdown
-image once the file exists.
+All captured at 1512×950 against a freshly seeded database. If you change the
+seed or the design, retake them at the same size so the README stays honest.
