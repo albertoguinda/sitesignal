@@ -56,11 +56,14 @@ async function bootstrap(): Promise<void> {
   app.use(express.json({ limit: "64kb" }));
 
   app.use("/api", apiRouter);
+  // Every unmatched /api path terminates here with JSON, so the SPA fallback
+  // below can never swallow an API request and answer it with index.html.
   app.use("/api", notFound);
 
-  // In production the same process serves the built SPA; in development Vite
-  // owns the client and proxies /api here.
-  if (existsSync(DIST_DIR)) {
+  // Production serves the built client from this same process and port; in
+  // development Vite owns the public port and proxies /api back here.
+  const hasBuild = existsSync(DIST_DIR);
+  if (hasBuild) {
     app.use(express.static(DIST_DIR, { maxAge: "1h", index: false }));
     app.get(/.*/, (_req, res) => {
       res.sendFile(resolve(DIST_DIR, "index.html"));
@@ -69,11 +72,14 @@ async function bootstrap(): Promise<void> {
 
   app.use(errorHandler);
 
-  const server = app.listen(env.PORT, () => {
+  const server = app.listen(env.listenPort, env.HOST, () => {
     const driver = env.usingEmbeddedDb ? `pglite (${env.PGLITE_DIR})` : "postgres";
-    console.log(`[api] listening on http://localhost:${env.PORT} · db: ${driver}`);
-    if (!existsSync(DIST_DIR)) {
-      console.log("[api] no dist/ build found — run the Vite dev server for the UI");
+    const role = env.isDevServer ? "api only, Vite serves the client" : "api + client";
+    console.log(
+      `[api] listening on http://${env.HOST}:${env.listenPort} · ${role} · db: ${driver}`,
+    );
+    if (!hasBuild && !env.isDevServer) {
+      console.warn("[api] no dist/ build found — run `npm run build` before `npm start`");
     }
   });
 

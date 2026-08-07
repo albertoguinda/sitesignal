@@ -3,7 +3,18 @@ import react from "@vitejs/plugin-react";
 import tailwindcss from "@tailwindcss/vite";
 import { fileURLToPath, URL } from "node:url";
 
-const API_PORT = process.env.PORT ?? "5174";
+/** The single public port. Replit maps it to the external URL. */
+const CLIENT_PORT = Number(process.env.PORT ?? 5000);
+/** Where the Express process moved aside to in development. */
+const API_PORT = process.env.API_PORT ?? "5174";
+
+/**
+ * Replit terminates TLS on 443 in front of the container, so the HMR client
+ * must be told to dial 443 rather than the container port. Applying that
+ * unconditionally would break plain-HTTP local development, so it is gated on
+ * Replit's own environment variables.
+ */
+const onReplit = Boolean(process.env.REPL_ID ?? process.env.REPLIT_DEV_DOMAIN);
 
 /**
  * Headers Vite can emit locally. In production these belong to whatever fronts
@@ -26,16 +37,27 @@ export default defineConfig({
     },
   },
   server: {
-    port: 5173,
+    host: "0.0.0.0",
+    port: CLIENT_PORT,
+    strictPort: true,
+    // Replit serves the dev app from a generated *.replit.dev subdomain; Vite
+    // rejects unknown Host headers unless they are listed here.
+    allowedHosts: [".replit.dev", ".repl.co", "localhost"],
+    ...(onReplit ? { hmr: { clientPort: 443 } } : {}),
     headers: securityHeaders,
     proxy: {
       "/api": {
-        target: `http://localhost:${API_PORT}`,
+        target: `http://127.0.0.1:${API_PORT}`,
         changeOrigin: true,
       },
     },
   },
-  preview: { headers: securityHeaders },
+  preview: {
+    host: "0.0.0.0",
+    port: CLIENT_PORT,
+    allowedHosts: [".replit.dev", ".repl.co", "localhost"],
+    headers: securityHeaders,
+  },
   build: {
     outDir: "dist",
     sourcemap: false,
