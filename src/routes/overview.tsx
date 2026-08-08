@@ -132,40 +132,13 @@ export default function OverviewPage() {
       ) : null}
 
       {/* ═══════════════════════════════════════════════════════════════
-          BENTO BLOCK — Fleet + Alerts + Assets
-          Fleet by Type (left) | Recent alerts (right, spans 2 rows)
-          Assets table  (left) | Recent alerts continues
+          BENTO BLOCK — Assets + Alerts + Fleet
+          Assets table  (left, row 1) | Recent alerts (right, spans 2 rows)
+          Fleet by Type (left, row 2) | Recent alerts continues
          ═══════════════════════════════════════════════════════════════ */}
-      <div className="grid gap-4 xl:grid-cols-[1fr_340px] xl:grid-rows-[auto_520px]">
-        {/* Fleet distribution — left column, row 1 */}
-        {overview.data && overview.data.assets.length > 0 ? (
-          <section
-            aria-label="Fleet distribution"
-            className="xl:min-h-[260px] xl:row-start-1 xl:col-start-1"
-          >
-            <AssetDistribution assets={overview.data.assets} />
-          </section>
-        ) : null}
-
-        {/* Recent alerts — right column, spans both rows */}
-        <Card className="flex flex-col overflow-hidden xl:row-start-1 xl:row-span-2 xl:col-start-2">
-          <CardHeader>
-            <div className="flex items-center justify-between">
-              <CardTitle>Recent alerts</CardTitle>
-              <ArrowRight className="size-4 text-ink-muted ml-auto" aria-hidden />
-            </div>
-          </CardHeader>
-          <CardContent className="min-h-0 flex-1 overflow-y-auto p-0">
-            {overview.isPending ? (
-              <SkeletonRows rows={6} />
-            ) : (
-              <AlertFeed alerts={overview.data?.recentAlerts ?? []} />
-            )}
-          </CardContent>
-        </Card>
-
-        {/* Assets table — left column, fixed height with internal scroll in xl */}
-        <Card className="flex min-w-0 flex-col overflow-hidden xl:h-full">
+      <div className="grid gap-4 xl:grid-cols-[1fr_340px] xl:grid-rows-[520px_auto]">
+        {/* Assets table — left column, row 1, fixed height with internal scroll in xl */}
+        <Card className="flex min-w-0 flex-col overflow-hidden xl:h-full xl:row-start-1 xl:col-start-1">
           <CardHeader>
             <div className="flex items-center justify-between gap-4">
               <div>
@@ -191,6 +164,33 @@ export default function OverviewPage() {
             </div>
           </CardContent>
         </Card>
+
+        {/* Recent alerts — right column, natural height (never stretches) */}
+        <Card className="flex flex-col overflow-hidden xl:self-start xl:row-start-1 xl:row-span-2 xl:col-start-2">
+          <CardHeader>
+            <div className="flex items-center justify-between">
+              <CardTitle>Recent alerts</CardTitle>
+              <ArrowRight className="size-4 text-ink-muted ml-auto" aria-hidden />
+            </div>
+          </CardHeader>
+          <CardContent className="min-h-0 flex-1 overflow-y-auto p-0">
+            {overview.isPending ? (
+              <SkeletonRows rows={6} />
+            ) : (
+              <AlertFeed alerts={overview.data?.recentAlerts ?? []} />
+            )}
+          </CardContent>
+        </Card>
+
+        {/* Fleet distribution — left column, row 2 */}
+        {overview.data && overview.data.assets.length > 0 ? (
+          <section
+            aria-label="Fleet distribution"
+            className="xl:min-h-[260px] xl:row-start-2 xl:col-start-1"
+          >
+            <AssetDistribution assets={overview.data.assets} />
+          </section>
+        ) : null}
       </div>
 
       {/* ═══════════════════════════════════════════════════════════════
