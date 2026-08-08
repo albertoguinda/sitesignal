@@ -1,5 +1,6 @@
 # SiteSignal
 
+[![ci](https://github.com/albertoguinda/sitesignal/actions/workflows/ci.yml/badge.svg)](https://github.com/albertoguinda/sitesignal/actions/workflows/ci.yml)
 [![tests](https://img.shields.io/badge/tests%20-%20193-passing-brightgreen)](#testing)
 [![docker](https://img.shields.io/badge/docker-ready-blue)](#deploy)
 [![typescript](https://img.shields.io/badge/typescript-strict-3178c6)](#tech-stack)
