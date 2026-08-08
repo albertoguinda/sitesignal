@@ -46,6 +46,9 @@
 
   --color-focus: var(--sig-focus-ring);
 
+  --color-glass: var(--sig-glass-bg);
+  --color-glass-border: var(--sig-glass-border);
+
   --color-chart-1: var(--sig-chart-1);
   --color-chart-2: var(--sig-chart-2);
   --color-chart-3: var(--sig-chart-3);
@@ -99,6 +102,7 @@
   --animate-pulse-ring: pulse-ring 2.4s var(--sig-ease-in-out) infinite;
   --animate-sweep: sweep 2.6s linear infinite;
   --animate-rise: rise var(--sig-duration-slow) var(--sig-ease-out) both;
+  --animate-dropdown: dropdown-in 150ms var(--sig-ease-out) both;
 }
 
 @keyframes pulse-ring {
@@ -133,6 +137,17 @@
   to {
     opacity: 1;
     transform: none;
+  }
+}
+
+@keyframes dropdown-in {
+  from {
+    opacity: 0;
+    transform: scale(0.95) translateY(-4px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
   }
 }
 

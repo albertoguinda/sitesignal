@@ -209,6 +209,20 @@
   --sig-scene-grid: var(--sig-graphite-400);
   --sig-scene-key-light: var(--sig-graphite-50);
   --sig-scene-fill-light: var(--sig-cyan-400);
+
+  /* --- Glass / Neon / Candy ------------------------------------------------ */
+  --sig-glass-bg: color-mix(in oklab, var(--sig-graphite-900) 60%, transparent);
+  --sig-glass-border: color-mix(in oklab, var(--sig-graphite-400) 25%, transparent);
+  --sig-glass-blur: 16px;
+
+  --sig-neon-brand: 0 0 8px color-mix(in oklab, var(--sig-cyan-400) 50%, transparent),
+    0 0 20px color-mix(in oklab, var(--sig-cyan-400) 20%, transparent);
+  --sig-neon-ok: 0 0 8px color-mix(in oklab, var(--sig-green-400) 50%, transparent),
+    0 0 20px color-mix(in oklab, var(--sig-green-400) 20%, transparent);
+  --sig-neon-warning: 0 0 8px color-mix(in oklab, var(--sig-amber-400) 50%, transparent),
+    0 0 20px color-mix(in oklab, var(--sig-amber-400) 20%, transparent);
+  --sig-neon-critical: 0 0 8px color-mix(in oklab, var(--sig-red-400) 50%, transparent),
+    0 0 20px color-mix(in oklab, var(--sig-red-400) 20%, transparent);
 }
 
 /* Long-form telemetry animations are decorative; honour the OS preference. */
