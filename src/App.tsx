@@ -1,6 +1,7 @@
-import { lazy } from "react";
+import { Suspense, lazy } from "react";
 import { Route, Routes } from "react-router";
 import { AppShell } from "@/components/app-shell";
+import { ErrorBoundary } from "@/components/error-boundary";
 import { OrganizationProvider } from "@/lib/organization-context";
 import OverviewPage from "@/routes/overview";
 
@@ -9,6 +10,16 @@ const AssetDetailPage = lazy(() => import("@/routes/asset-detail"));
 const AnalyticsPage = lazy(() => import("@/routes/analytics"));
 const DesignSystemPage = lazy(() => import("@/routes/design-system"));
 const NotFoundPage = lazy(() => import("@/routes/not-found"));
+
+function LazyRoute({ children }: { children: React.ReactNode }) {
+  return (
+    <ErrorBoundary>
+      <Suspense fallback={<div className="flex items-center justify-center p-8 text-sm text-ink-faint">Loading...</div>}>
+        {children}
+      </Suspense>
+    </ErrorBoundary>
+  );
+}
 
 export default function App() {
   return (
@@ -26,7 +37,7 @@ export default function App() {
           path="/assets/:id"
           element={
             <AppShell>
-              <AssetDetailPage />
+              <LazyRoute><AssetDetailPage /></LazyRoute>
             </AppShell>
           }
         />
@@ -34,7 +45,7 @@ export default function App() {
           path="/analytics"
           element={
             <AppShell>
-              <AnalyticsPage />
+              <LazyRoute><AnalyticsPage /></LazyRoute>
             </AppShell>
           }
         />
@@ -42,11 +53,11 @@ export default function App() {
           path="/design-system"
           element={
             <AppShell>
-              <DesignSystemPage />
+              <LazyRoute><DesignSystemPage /></LazyRoute>
             </AppShell>
           }
         />
-        <Route path="*" element={<NotFoundPage />} />
+        <Route path="*" element={<LazyRoute><NotFoundPage /></LazyRoute>} />
       </Routes>
     </OrganizationProvider>
   );

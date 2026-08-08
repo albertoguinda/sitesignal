@@ -7,6 +7,16 @@ import { readToken, statusColor } from "@/theme/tokens";
 import { splitAssetName } from "@/lib/format";
 import { cn } from "@/lib/utils";
 
+function hasWebGL(): boolean {
+  if (typeof window === "undefined") return false;
+  try {
+    const canvas = document.createElement("canvas");
+    return !!(canvas.getContext("webgl2") || canvas.getContext("webgl"));
+  } catch {
+    return false;
+  }
+}
+
 /** Footprint and extrusion per machine type, in scene metres. */
 const ASSET_GEOMETRY: Record<AssetType, [width: number, height: number, depth: number]> = {
   pump: [1.6, 1.0, 1.2],
@@ -275,6 +285,44 @@ export function AssetScene({
   className?: string;
 }) {
   const reducedMotion = useMemo(prefersReducedMotion, []);
+  const [webglSupported] = useState(hasWebGL);
+  const [sceneError, setSceneError] = useState(false);
+
+  if (!webglSupported) {
+    return (
+      <div
+        className={cn(
+          "flex flex-col items-center justify-center gap-3 rounded-lg border border-line bg-sunken p-8 text-center",
+          className,
+        )}
+      >
+        <p className="text-sm font-medium text-ink">
+          3D visualization requires WebGL
+        </p>
+        <p className="text-xs text-ink-faint">
+          Your browser or device does not support WebGL. The floor plan is not available, but all other dashboard features work normally.
+        </p>
+      </div>
+    );
+  }
+
+  if (sceneError) {
+    return (
+      <div
+        className={cn(
+          "flex flex-col items-center justify-center gap-3 rounded-lg border border-line bg-sunken p-8 text-center",
+          className,
+        )}
+      >
+        <p className="text-sm font-medium text-ink">
+          3D scene failed to load
+        </p>
+        <p className="text-xs text-ink-faint">
+          There was an error rendering the floor plan. Try refreshing the page.
+        </p>
+      </div>
+    );
+  }
 
   return (
     <div
@@ -288,6 +336,7 @@ export function AssetScene({
         dpr={[1, 1.75]}
         camera={{ position: [11, 9, 13], fov: 38 }}
         gl={{ antialias: true }}
+        onCreated={() => setSceneError(false)}
       >
         <Suspense fallback={null}>
           <SceneContent
