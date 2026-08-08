@@ -77,16 +77,29 @@ export default function AnalyticsPage() {
     });
   }, [candidates]);
 
-  const analytics = useAnalytics(selectedIds, metric, range);
+  /**
+   * The chart always runs a query: while the user has not picked assets yet,
+   * fall back to the first three candidates so the graph renders on first
+   * paint instead of waiting for the effect above. Once the effect hydrates
+   * `selectedIds`, the query key is identical, so react-query reuses the fetch.
+   */
+  const effectiveIds = useMemo(() => {
+    if (selectedIds.length > 0) return selectedIds;
+    return candidates.slice(0, 3).map((asset) => asset.id);
+  }, [selectedIds, candidates]);
+
+  const analytics = useAnalytics(effectiveIds, metric, range);
 
   const toggleAsset = (id: number) => {
-    setSelectedIds((current) => {
-      if (current.includes(id)) {
-        return current.length === 1 ? current : current.filter((entry) => entry !== id);
-      }
-      if (current.length >= MAX_SERIES) return current;
-      return [...current, id];
-    });
+    // Operate on the effective selection so the first click after hydration
+    // starts from the three default series instead of an empty set.
+    const current = effectiveIds;
+    if (current.includes(id)) {
+      if (current.length === 1) return;
+      setSelectedIds(current.filter((entry) => entry !== id));
+    } else if (current.length < MAX_SERIES) {
+      setSelectedIds([...current, id]);
+    }
   };
 
   // react-query keeps the previous response as placeholder while a fetch is in
@@ -172,7 +185,7 @@ export default function AnalyticsPage() {
                 <TrendingUp className="size-3.5 text-ink-muted" aria-hidden />
                 <span className="label-caps">Assets</span>
               <span className="ml-auto rounded-full bg-brand-wash px-2 py-0.5 text-2xs font-medium text-brand tabular" aria-live="polite">
-                {selectedIds.length}/{MAX_SERIES}
+                {effectiveIds.length}/{MAX_SERIES}
               </span>
               </div>
               <p className="text-2xs text-ink-faint">
@@ -201,9 +214,9 @@ export default function AnalyticsPage() {
               ) : (
                 <ul className="divide-y divide-line-faint rounded-lg border border-line-faint">
                   {candidates.map((asset) => {
-                    const index = selectedIds.indexOf(asset.id);
+                    const index = effectiveIds.indexOf(asset.id);
                     const active = index !== -1;
-                    const atLimit = !active && selectedIds.length >= MAX_SERIES;
+                    const atLimit = !active && effectiveIds.length >= MAX_SERIES;
                     const { code, label } = splitAssetName(asset.name);
                     return (
                       <li key={asset.id}>
@@ -264,9 +277,11 @@ export default function AnalyticsPage() {
                   {metricLabel(metric)} over {RANGE_LABEL[range]}
                 </h2>
                 <p className="mt-0.5 text-xs text-ink-muted">
-                  {data
-                    ? `${data.series.length} series · ${data.bucket === "day" ? "daily" : "hourly"} buckets · UTC`
-                    : "Select at least one asset to compare"}
+                  {candidates.length === 0
+                    ? "No assets report this metric"
+                    : data
+                      ? `${data.series.length} series · ${data.bucket === "day" ? "daily" : "hourly"} buckets · UTC`
+                      : "Loading series…"}
                 </p>
               </div>
               {aggregateStats && (
@@ -284,17 +299,11 @@ export default function AnalyticsPage() {
               {analytics.isError ? (
                 <ErrorState description={(analytics.error as Error).message} />
               ) : analytics.isPending || !data ? (
-                <div className="flex flex-col gap-3">
-                  <Skeleton className="h-80 w-full rounded-lg" />
-                  <div className="grid grid-cols-4 gap-2">
-                    <Skeleton className="h-12 rounded-lg" />
-                    <Skeleton className="h-12 rounded-lg" />
-                    <Skeleton className="h-12 rounded-lg" />
-                    <Skeleton className="h-12 rounded-lg" />
-                  </div>
+                <div className="flex h-full min-h-[320px] items-center justify-center">
+                  <Skeleton className="h-full min-h-[320px] w-full rounded-lg" />
                 </div>
               ) : data.series.length === 0 ? (
-                <div className="flex h-80 items-center justify-center rounded-lg border border-dashed border-line-faint">
+                <div className="flex h-full min-h-[320px] items-center justify-center rounded-lg border border-dashed border-line-faint">
                   <EmptyState
                     title="No data in this window"
                     description="Try a different range or metric."
