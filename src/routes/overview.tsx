@@ -132,13 +132,15 @@ export default function OverviewPage() {
       ) : null}
 
       {/* ═══════════════════════════════════════════════════════════════
-          BENTO BLOCK — Assets table and Recent alerts share a single
-          row so their bottom edges line up; Fleet distribution sits on
-          its own row below the bento and spans the full width.
+          BENTO BLOCK — Assets table and Recent alerts share a row so
+          their bottom edges line up. The row's height is set by the
+          tallest card (assets table with all 18 rows), and Recent
+          alerts stretches to match. Fleet distribution sits on its own
+          row below the bento, full width.
          ═══════════════════════════════════════════════════════════════ */}
-      <div className="grid gap-4 xl:grid-cols-[1fr_340px]">
-        {/* Assets table — left column, fixed height with internal scroll in xl */}
-        <Card className="flex min-w-0 flex-col overflow-hidden xl:h-[480px] xl:row-start-1 xl:col-start-1">
+      <div className="grid items-stretch gap-4 xl:grid-cols-[1fr_340px]">
+        {/* Assets table — left column, shows every row, no inner scroll */}
+        <Card className="flex min-w-0 flex-col overflow-hidden xl:row-start-1 xl:col-start-1">
           <CardHeader>
             <div className="flex items-center justify-between gap-4">
               <div>
@@ -155,18 +157,16 @@ export default function OverviewPage() {
             </div>
           </CardHeader>
           <CardContent className="min-h-0 flex-1 p-0">
-            <div className="max-h-[340px] overflow-auto xl:h-full xl:max-h-none">
-              {overview.isPending ? (
-                <SkeletonRows rows={8} />
-              ) : (
-                <AssetTable assets={overview.data?.assets ?? []} showSite={siteId === undefined} />
-              )}
-            </div>
+            {overview.isPending ? (
+              <SkeletonRows rows={8} />
+            ) : (
+              <AssetTable assets={overview.data?.assets ?? []} showSite={siteId === undefined} />
+            )}
           </CardContent>
         </Card>
 
-        {/* Recent alerts — right column, matches the table's bottom edge */}
-        <Card className="flex flex-col overflow-hidden xl:h-[480px] xl:row-start-1 xl:col-start-2">
+        {/* Recent alerts — right column, stretches to match the table's height */}
+        <Card className="flex flex-col overflow-hidden xl:row-start-1 xl:col-start-2">
           <CardHeader>
             <div className="flex items-center justify-between">
               <CardTitle>Recent alerts</CardTitle>
