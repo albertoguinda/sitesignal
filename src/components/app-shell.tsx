@@ -108,10 +108,10 @@ function ProfileDropdown({
       const idx = focusables.indexOf(document.activeElement as HTMLElement);
       if (e.key === "ArrowDown") {
         e.preventDefault();
-        focusables[(idx + 1) % focusables.length].focus();
+        focusables[(idx + 1) % focusables.length]?.focus();
       } else if (e.key === "ArrowUp") {
         e.preventDefault();
-        focusables[(idx - 1 + focusables.length) % focusables.length].focus();
+        focusables[(idx - 1 + focusables.length) % focusables.length]?.focus();
       } else if (e.key === "Tab") {
         close();
       }

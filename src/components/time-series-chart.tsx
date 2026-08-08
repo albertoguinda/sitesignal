@@ -53,8 +53,10 @@ function mergeSeries(series: MetricSeries[], bucket: Bucket): MergedPoint[] {
 
   // Generate the complete time range so the x-axis has no holes.
   const stepMs = bucket === "hour" ? 3_600_000 : 86_400_000;
-  const startMs = new Date(existingTimes[0]).getTime();
-  const endMs = new Date(existingTimes[existingTimes.length - 1]).getTime();
+  const first = existingTimes[0]!;
+  const last = existingTimes[existingTimes.length - 1]!;
+  const startMs = new Date(first).getTime();
+  const endMs = new Date(last).getTime();
 
   const fullRange: MergedPoint[] = [];
   for (let t = startMs; t <= endMs; t += stepMs) {
