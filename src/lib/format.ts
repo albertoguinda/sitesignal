@@ -36,10 +36,28 @@ export function formatDelta(value: number | null, digits = 1): string {
   return `${sign}${numberFormatter(digits).format(Math.abs(value))}`;
 }
 
+/**
+ * Compact scaling with fixed K/M/B suffixes. Intl's `notation: "compact"`
+ * delegates the suffix to CLDR, which spells "1.2k"/"1.2m" in lowercase on
+ * some runtimes — so the suffix is chosen here to keep output stable across
+ * platforms and Node builds.
+ */
+const COMPACT_UNITS: [number, string][] = [
+  [1e9, "B"],
+  [1e6, "M"],
+  [1e3, "K"],
+];
+
 export function formatCompact(value: number): string {
-  return new Intl.NumberFormat(LOCALE, { notation: "compact", maximumFractionDigits: 1 }).format(
-    value,
-  );
+  if (!Number.isFinite(value)) return "—";
+  const abs = Math.abs(value);
+  for (const [factor, suffix] of COMPACT_UNITS) {
+    if (abs >= factor) {
+      const scaled = value / factor;
+      return `${formatNumber(scaled, scaled >= 100 ? 0 : 1)}${suffix}`;
+    }
+  }
+  return formatNumber(value, 0);
 }
 
 export function formatDateTime(iso: string, timeZone?: string): string {
