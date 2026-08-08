@@ -51,6 +51,58 @@ function StatPill({ label, value, unit }: { label: string; value: string; unit?:
   );
 }
 
+/** Minimal inline trend for one series row — no axes, just the shape. */
+function Sparkline({
+  points,
+  color,
+  id,
+}: {
+  points: { t: string; v: number }[];
+  color: string;
+  id: string;
+}) {
+  if (points.length < 2) return null;
+
+  const values = points.map((p) => p.v);
+  const min = Math.min(...values);
+  const max = Math.max(...values);
+  const span = max - min || 1;
+  const W = 96;
+  const H = 28;
+
+  const d = points
+    .map((p, i) => {
+      const x = (i / (points.length - 1)) * (W - 2) + 1;
+      const y = H - 3 - ((p.v - min) / span) * (H - 6);
+      return `${i === 0 ? "M" : "L"}${x.toFixed(1)},${y.toFixed(1)}`;
+    })
+    .join(" ");
+
+  const fill = `${d} L${W - 1},${H - 1} L1,${H - 1} Z`;
+  const lastY = H - 3 - ((values.at(-1)! - min) / span) * (H - 6);
+
+  return (
+    <svg
+      width={W}
+      height={H}
+      viewBox={`0 0 ${W} ${H}`}
+      className="overflow-visible"
+      aria-hidden
+      focusable="false"
+    >
+      <defs>
+        <linearGradient id={id} x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stopColor={color} stopOpacity={0.25} />
+          <stop offset="100%" stopColor={color} stopOpacity={0.02} />
+        </linearGradient>
+      </defs>
+      <path d={fill} fill={`url(#${id})`} stroke="none" />
+      <path d={d} fill="none" stroke={color} strokeWidth={1.5} strokeLinecap="round" strokeLinejoin="round" />
+      <circle cx={W - 1} cy={lastY} r={2} fill={color} />
+    </svg>
+  );
+}
+
 export default function AnalyticsPage() {
   const [siteId, setSiteId] = useState<number | undefined>(undefined);
   const [metric, setMetric] = useState<Metric>("temperature");
@@ -345,6 +397,9 @@ export default function AnalyticsPage() {
                         Spread <span className="font-normal text-ink-faint">{data.unit}</span>
                       </th>
                       <th scope="col" className="label-caps px-5 py-2.5 text-right">Samples</th>
+                      <th scope="col" className="label-caps px-5 py-2.5 text-right">
+                        <span className="sr-only">Trend</span>
+                      </th>
                     </tr>
                   </thead>
                   <tbody>
@@ -379,6 +434,15 @@ export default function AnalyticsPage() {
                           </td>
                           <td className="px-5 py-3 text-right tabular text-xs text-ink-muted" data-numeric>
                             {series.points.length}
+                          </td>
+                          <td className="px-5 py-3 text-right">
+                            <span className="inline-flex justify-end">
+                              <Sparkline
+                                points={series.points}
+                                color={chartColor(index)}
+                                id={`spark-${series.assetId}`}
+                              />
+                            </span>
                           </td>
                         </tr>
                       );

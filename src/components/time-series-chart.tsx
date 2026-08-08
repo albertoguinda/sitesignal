@@ -1,5 +1,6 @@
 import { useMemo } from "react";
 import {
+  Area,
   CartesianGrid,
   Legend,
   Line,
@@ -101,22 +102,24 @@ function ChartTooltip({ active, payload, label, metric, unit, bucket }: ChartToo
   if (!active || !payload?.length) return null;
 
   return (
-    <div className="min-w-44 rounded-md border border-line bg-overlay p-2.5 shadow-lg">
-      <p className="label-caps mb-1.5">{tickFormatter(String(label), bucket)} UTC</p>
-      <ul className="flex flex-col gap-1">
+    <div className="min-w-48 rounded-lg border border-line bg-overlay/95 p-3 shadow-xl backdrop-blur-sm">
+      <p className="label-caps mb-2 border-b border-line-faint pb-1.5">
+        {tickFormatter(String(label), bucket)} UTC
+      </p>
+      <ul className="flex flex-col gap-1.5">
         {payload.map((entry) => (
-          <li key={String(entry.dataKey)} className="flex items-center justify-between gap-4">
-            <span className="flex items-center gap-1.5 text-xs text-ink-soft">
+          <li key={String(entry.dataKey)} className="flex items-center justify-between gap-5">
+            <span className="flex min-w-0 items-center gap-2 text-xs text-ink-soft">
               <span
-                className="size-2 shrink-0 rounded-full"
-                style={{ background: entry.color }}
+                className="size-2 shrink-0 rounded-full ring-2 ring-transparent"
+                style={{ background: entry.color, boxShadow: `0 0 0 3px ${entry.color}22` }}
                 aria-hidden
               />
-              {entry.name}
+              <span className="truncate">{entry.name}</span>
             </span>
-            <span className="tabular text-xs text-ink">
+            <span className="tabular text-xs font-semibold text-ink">
               {typeof entry.value === "number" ? formatMetric(entry.value, metric) : "—"}
-              <span className="ml-0.5 text-ink-muted">{unit}</span>
+              <span className="ml-1 font-normal text-ink-muted">{unit}</span>
             </span>
           </li>
         ))}
@@ -194,60 +197,88 @@ export function TimeSeriesChart({
       <figcaption className="label-caps mb-1 pl-1">{unit}</figcaption>
       <div className={height === "100%" ? "min-h-0 flex-1" : undefined}>
         <ResponsiveContainer width="100%" height={height}>
-        <LineChart data={data} margin={{ top: 8, right: 12, bottom: 4, left: -8 }}>
-        <CartesianGrid stroke={gridColor} strokeDasharray="2 4" vertical={false} />
-        <XAxis
-          dataKey="t"
-          tickFormatter={(value: string) => tickFormatter(value, bucket)}
-          stroke={axisColor}
-          tick={{ fill: axisColor, fontSize: 11 }}
-          tickLine={false}
-          axisLine={{ stroke: gridColor }}
-          minTickGap={48}
-        />
-        <YAxis
-          stroke={axisColor}
-          tick={{ fill: axisColor, fontSize: 11 }}
-          tickLine={false}
-          axisLine={false}
-          width={52}
-          tickFormatter={(value: number) =>
-            value.toFixed(yDomain && yDomain.span < 10 ? 1 : 0)
-          }
-          domain={yDomain ? [yDomain.lo, yDomain.hi] : ["auto", "auto"]}
-        />
-        <Tooltip
-          cursor={{ stroke: axisColor, strokeDasharray: "3 3" }}
-          content={<ChartTooltip metric={metric} unit={unit} bucket={bucket} />}
-        />
-        {showLegend && series.length > 1 ? (
-          <Legend
-            verticalAlign="top"
-            align="left"
-            height={28}
-            wrapperStyle={{ maxHeight: 56 }}
-            iconType="plainline"
-            iconSize={14}
-            formatter={(value: string) => (
-              <span className="text-xs text-ink-muted">{value}</span>
-            )}
-          />
-        ) : null}
-        {series.map((entry, index) => (
-          <Line
-            key={entry.assetId}
-            type="monotone"
-            dataKey={String(entry.assetId)}
-            name={splitAssetName(entry.assetName).label || entry.assetName}
-            stroke={palette[index]}
-            strokeWidth={1.75}
-            dot={false}
-            activeDot={{ r: 3, strokeWidth: 0 }}
-            connectNulls={false}
-            isAnimationActive={false}
-          />
-        ))}
-      </LineChart>
+          <LineChart data={data} margin={{ top: 8, right: 16, bottom: 0, left: -4 }}>
+            <defs>
+              {series.map((entry, index) => (
+                <linearGradient
+                  key={entry.assetId}
+                  id={`series-fill-${entry.assetId}`}
+                  x1="0"
+                  y1="0"
+                  x2="0"
+                  y2="1"
+                >
+                  <stop offset="0%" stopColor={palette[index]} stopOpacity={0.22} />
+                  <stop offset="100%" stopColor={palette[index]} stopOpacity={0.02} />
+                </linearGradient>
+              ))}
+            </defs>
+            <CartesianGrid stroke={gridColor} strokeDasharray="2 4" vertical={false} />
+            <XAxis
+              dataKey="t"
+              tickFormatter={(value: string) => tickFormatter(value, bucket)}
+              stroke={axisColor}
+              tick={{ fill: axisColor, fontSize: 11 }}
+              tickLine={false}
+              axisLine={{ stroke: gridColor }}
+              minTickGap={48}
+            />
+            <YAxis
+              stroke={axisColor}
+              tick={{ fill: axisColor, fontSize: 11 }}
+              tickLine={false}
+              axisLine={false}
+              width={52}
+              tickFormatter={(value: number) =>
+                Math.abs(value) >= 1000
+                  ? `${(value / 1000).toFixed(value % 1000 === 0 ? 0 : 1)}k`
+                  : value.toFixed(yDomain && yDomain.span < 10 ? 1 : 0)
+              }
+              domain={yDomain ? [yDomain.lo, yDomain.hi] : ["auto", "auto"]}
+            />
+            <Tooltip
+              cursor={{ stroke: axisColor, strokeDasharray: "3 3", strokeOpacity: 0.6 }}
+              content={<ChartTooltip metric={metric} unit={unit} bucket={bucket} />}
+            />
+            {showLegend && series.length > 1 ? (
+              <Legend
+                verticalAlign="top"
+                align="left"
+                height={32}
+                iconType="plainline"
+                iconSize={16}
+                wrapperStyle={{ paddingBottom: 8, fontSize: 12 }}
+                formatter={(value: string) => (
+                  <span className="text-xs text-ink-muted">{value}</span>
+                )}
+              />
+            ) : null}
+            {series.map((entry) => (
+              <Area
+                key={`fill-${entry.assetId}`}
+                type="monotone"
+                dataKey={String(entry.assetId)}
+                stroke="none"
+                fill={`url(#series-fill-${entry.assetId})`}
+                dot={false}
+                isAnimationActive={false}
+              />
+            ))}
+            {series.map((entry, index) => (
+              <Line
+                key={entry.assetId}
+                type="monotone"
+                dataKey={String(entry.assetId)}
+                name={splitAssetName(entry.assetName).label || entry.assetName}
+                stroke={palette[index]}
+                strokeWidth={1.75}
+                dot={false}
+                activeDot={{ r: 3.5, strokeWidth: 2, stroke: "var(--sig-surface-overlay)" }}
+                connectNulls={false}
+                isAnimationActive={false}
+              />
+            ))}
+          </LineChart>
         </ResponsiveContainer>
       </div>
     </figure>
