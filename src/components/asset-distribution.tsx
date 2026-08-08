@@ -69,48 +69,50 @@ export function AssetDistribution({ assets }: { assets: AssetRow[] }) {
   if (total === 0) return null;
 
   return (
-    <article className="panel relative overflow-hidden px-4 py-3.5">
+    <article className="panel relative flex h-full flex-col overflow-hidden px-4 py-3.5">
       <span className="absolute inset-x-0 top-0 h-px bg-brand/40" aria-hidden />
       <div className="flex items-start justify-between gap-3">
         <p className="label-caps">Fleet by type</p>
         <Cog className="size-4 text-ink-faint" aria-hidden />
       </div>
 
-      {/* Stacked bar */}
-      <div
-        className="mt-3 flex h-3 w-full overflow-hidden rounded-full bg-sunken"
-        role="img"
-        aria-label={groups.map((g) => `${g.total} ${g.label}`).join(", ")}
-      >
-        {groups.map((g) => (
-          <span
-            key={g.type}
-            className={cn("block shrink-0", TYPE_COLORS[g.type] ?? "bg-line-strong")}
-            style={{ width: `${(g.total / total) * 100}%` }}
-            title={`${g.label}: ${g.total}`}
-          />
-        ))}
-      </div>
-
-      {/* Legend */}
-      <ul className="mt-3 grid grid-cols-2 gap-x-4 gap-y-2 sm:grid-cols-3">
-        {groups.map((g) => (
-          <li key={g.type} className="flex items-center gap-2 text-xs">
+      {/* Stacked bar + legend anchored to the bottom of the card */}
+      <div className="mt-auto">
+        <div
+          className="mt-3 flex h-3 w-full overflow-hidden rounded-full bg-sunken"
+          role="img"
+          aria-label={groups.map((g) => `${g.total} ${g.label}`).join(", ")}
+        >
+          {groups.map((g) => (
             <span
-              className={cn("size-2.5 shrink-0 rounded-sm", TYPE_COLORS[g.type] ?? "bg-line-strong")}
-              aria-hidden
+              key={g.type}
+              className={cn("block shrink-0", TYPE_COLORS[g.type] ?? "bg-line-strong")}
+              style={{ width: `${(g.total / total) * 100}%` }}
+              title={`${g.label}: ${g.total}`}
             />
-            <span className="min-w-0 flex-1 truncate text-ink-soft">{g.label}</span>
-            <span className="tabular font-medium text-ink">{g.total}</span>
-            {/* Health dots */}
-            <span className="flex shrink-0 items-center gap-0.5" aria-label={`${g.ok} ok, ${g.warning} warning, ${g.critical} critical`}>
-              {g.ok > 0 && <span className="size-1.5 rounded-full bg-ok" />}
-              {g.warning > 0 && <span className="size-1.5 rounded-full bg-warning" />}
-              {g.critical > 0 && <span className="size-1.5 rounded-full bg-critical" />}
-            </span>
-          </li>
-        ))}
-      </ul>
+          ))}
+        </div>
+
+        {/* Legend */}
+        <ul className="mt-3 grid grid-cols-2 gap-x-4 gap-y-2 sm:grid-cols-3">
+          {groups.map((g) => (
+            <li key={g.type} className="flex items-center gap-2 text-xs">
+              <span
+                className={cn("size-2.5 shrink-0 rounded-sm", TYPE_COLORS[g.type] ?? "bg-line-strong")}
+                aria-hidden
+              />
+              <span className="min-w-0 flex-1 truncate text-ink-soft">{g.label}</span>
+              <span className="tabular font-medium text-ink">{g.total}</span>
+              {/* Health dots */}
+              <span className="flex shrink-0 items-center gap-0.5" aria-label={`${g.ok} ok, ${g.warning} warning, ${g.critical} critical`}>
+                {g.ok > 0 && <span className="size-1.5 rounded-full bg-ok" />}
+                {g.warning > 0 && <span className="size-1.5 rounded-full bg-warning" />}
+                {g.critical > 0 && <span className="size-1.5 rounded-full bg-critical" />}
+              </span>
+            </li>
+          ))}
+        </ul>
+      </div>
     </article>
   );
 }

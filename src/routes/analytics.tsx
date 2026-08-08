@@ -117,7 +117,7 @@ export default function AnalyticsPage() {
         actions={<SiteSelector sites={sites.data ?? []} value={siteId} onChange={setSiteId} />}
       />
 
-      <div className="grid gap-5 items-start xl:grid-cols-[300px_1fr]">
+      <div className="grid gap-5 xl:grid-cols-[300px_1fr]">
         {/* ── Left Panel: Controls ── */}
         <aside className="flex flex-col gap-4 xl:sticky xl:top-6 xl:max-h-[calc(100vh-3rem)]">
           {/* Metric Selector */}
@@ -254,9 +254,9 @@ export default function AnalyticsPage() {
         </aside>
 
         {/* ── Right Panel: Chart + Summary ── */}
-        <div className="flex flex-col gap-4">
+        <div className="flex h-full flex-col gap-4">
           {/* Chart Card */}
-          <div className="panel overflow-hidden">
+          <div className="panel flex min-h-0 flex-1 flex-col overflow-hidden">
             {/* Chart Header */}
             <div className="flex items-start justify-between gap-4 border-b border-line-faint px-5 py-4">
               <div>
@@ -280,7 +280,7 @@ export default function AnalyticsPage() {
             </div>
 
             {/* Chart Area */}
-            <div className="px-5 py-4">
+            <div className="min-h-0 flex-1 px-5 py-4">
               {analytics.isError ? (
                 <ErrorState description={(analytics.error as Error).message} />
               ) : analytics.isPending || !data ? (
@@ -306,7 +306,7 @@ export default function AnalyticsPage() {
                   metric={data.metric}
                   unit={data.unit}
                   bucket={data.bucket}
-                  height={380}
+                  height="100%"
                 />
               )}
             </div>

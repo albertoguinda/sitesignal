@@ -139,7 +139,8 @@ export function TimeSeriesChart({
   metric: Metric;
   unit: string;
   bucket: Bucket;
-  height?: number;
+  /** Fixed px height, or "100%" to fill a flex parent. */
+  height?: number | "100%";
   colorBy?: "series" | "metric";
   showLegend?: boolean;
 }) {
@@ -184,12 +185,16 @@ export function TimeSeriesChart({
   }
 
   return (
-    <figure className="m-0" aria-label={`${metric} trend for the selected assets`}>
+    <figure
+      className={height === "100%" ? "m-0 flex h-full flex-col" : "m-0"}
+      aria-label={`${metric} trend for the selected assets`}
+    >
       {/* The unit lives above the axis rather than as a rotated axis label:
           rotated glyphs at 11 px are unreadable on a dark ground. */}
       <figcaption className="label-caps mb-1 pl-1">{unit}</figcaption>
-      <ResponsiveContainer width="100%" height={height}>
-      <LineChart data={data} margin={{ top: 8, right: 12, bottom: 4, left: -8 }}>
+      <div className={height === "100%" ? "min-h-0 flex-1" : undefined}>
+        <ResponsiveContainer width="100%" height={height}>
+        <LineChart data={data} margin={{ top: 8, right: 12, bottom: 4, left: -8 }}>
         <CartesianGrid stroke={gridColor} strokeDasharray="2 4" vertical={false} />
         <XAxis
           dataKey="t"
@@ -243,7 +248,8 @@ export function TimeSeriesChart({
           />
         ))}
       </LineChart>
-      </ResponsiveContainer>
+        </ResponsiveContainer>
+      </div>
     </figure>
   );
 }

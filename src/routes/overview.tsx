@@ -136,10 +136,13 @@ export default function OverviewPage() {
           Fleet by Type (left) | Recent alerts (right, spans 2 rows)
           Assets table  (left) | Recent alerts continues
          ═══════════════════════════════════════════════════════════════ */}
-      <div className="grid gap-4 xl:grid-cols-[1fr_340px]">
+      <div className="grid gap-4 xl:grid-cols-[1fr_340px] xl:grid-rows-[auto_520px]">
         {/* Fleet distribution — left column, row 1 */}
         {overview.data && overview.data.assets.length > 0 ? (
-          <section aria-label="Fleet distribution" className="xl:row-start-1 xl:col-start-1">
+          <section
+            aria-label="Fleet distribution"
+            className="xl:min-h-[260px] xl:row-start-1 xl:col-start-1"
+          >
             <AssetDistribution assets={overview.data.assets} />
           </section>
         ) : null}
@@ -161,8 +164,8 @@ export default function OverviewPage() {
           </CardContent>
         </Card>
 
-        {/* Assets table — left column */}
-        <Card className="min-w-0 overflow-hidden self-start">
+        {/* Assets table — left column, fixed height with internal scroll in xl */}
+        <Card className="flex min-w-0 flex-col overflow-hidden xl:h-full">
           <CardHeader>
             <div className="flex items-center justify-between gap-4">
               <div>
@@ -178,8 +181,8 @@ export default function OverviewPage() {
               )}
             </div>
           </CardHeader>
-          <CardContent className="p-0">
-            <div className="max-h-[340px] overflow-auto">
+          <CardContent className="min-h-0 flex-1 p-0">
+            <div className="max-h-[340px] overflow-auto xl:h-full xl:max-h-none">
               {overview.isPending ? (
                 <SkeletonRows rows={8} />
               ) : (
@@ -191,19 +194,26 @@ export default function OverviewPage() {
       </div>
 
       {/* ═══════════════════════════════════════════════════════════════
-          Ambient + Forecast side by side
+          ROW 5 — Site forecasts (one card per site, full width)
          ═══════════════════════════════════════════════════════════════ */}
       {overview.data && overview.data.ambient.length > 0 ? (
-        <div className="grid gap-4 xl:grid-cols-[1fr_380px]">
-          <ForecastCards sites={overview.data.ambient} />
-          <section aria-label="Ambient conditions" className="flex flex-col gap-4">
-            {overview.data.ambient.map((ambient) => (
-              <div key={ambient.siteId} className="panel px-4 py-3.5">
-                <AmbientPanel ambient={ambient} compact />
-              </div>
-            ))}
-          </section>
-        </div>
+        <ForecastCards sites={overview.data.ambient} />
+      ) : null}
+
+      {/* ═══════════════════════════════════════════════════════════════
+          ROW 6 — Ambient conditions per site (full width)
+         ═══════════════════════════════════════════════════════════════ */}
+      {overview.data && overview.data.ambient.length > 0 ? (
+        <section
+          aria-label="Ambient conditions"
+          className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3"
+        >
+          {overview.data.ambient.map((ambient) => (
+            <div key={ambient.siteId} className="panel px-4 py-3.5">
+              <AmbientPanel ambient={ambient} compact />
+            </div>
+          ))}
+        </section>
       ) : null}
     </div>
   );
