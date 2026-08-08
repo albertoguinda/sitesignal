@@ -70,7 +70,7 @@ export function KpiCard({
       {segments && total > 0 ? (
         <div className="mt-3">
           <div
-            className="flex h-1.5 w-full overflow-hidden rounded-full bg-sunken"
+            className="flex h-2 w-full overflow-hidden rounded-full bg-sunken"
             role="img"
             aria-label={segments.map((s) => `${s.value} ${s.label}`).join(", ")}
           >
@@ -79,7 +79,7 @@ export function KpiCard({
               .map((segment) => (
                 <span
                   key={segment.label}
-                  className={ACCENT[segment.tone]}
+                  className={cn("block shrink-0", ACCENT[segment.tone])}
                   style={{ width: `${(segment.value / total) * 100}%` }}
                 />
               ))}

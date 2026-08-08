@@ -11,14 +11,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { PageHeader } from "@/components/page-header";
 import { SiteSelector } from "@/components/site-selector";
@@ -221,81 +213,76 @@ export default function AnalyticsPage() {
             ) : analytics.isPending || !analytics.data ? (
               <Skeleton className="h-80 w-full rounded-md" />
             ) : (
-              <TimeSeriesChart
-                series={analytics.data.series}
-                metric={analytics.data.metric}
-                unit={analytics.data.unit}
-                bucket={analytics.data.bucket}
-                height={340}
-              />
+              <>
+                <TimeSeriesChart
+                  series={analytics.data.series}
+                  metric={analytics.data.metric}
+                  unit={analytics.data.unit}
+                  bucket={analytics.data.bucket}
+                  height={280}
+                />
+
+                {analytics.data.series.length > 0 && (
+                  <div className="mt-4 border-t border-line-faint pt-4">
+                    <p className="label-caps mb-2">Series summary</p>
+                    <div className="overflow-x-auto">
+                      <table className="w-full border-collapse text-sm">
+                        <thead>
+                          <tr className="border-b border-line-faint text-left">
+                            <th className="pb-2 pr-3 font-medium text-ink-muted text-2xs uppercase tracking-wider">Asset</th>
+                            <th className="pb-2 px-3 font-medium text-ink-muted text-2xs uppercase tracking-wider text-right">Min</th>
+                            <th className="pb-2 px-3 font-medium text-ink-muted text-2xs uppercase tracking-wider text-right">Mean</th>
+                            <th className="pb-2 px-3 font-medium text-ink-muted text-2xs uppercase tracking-wider text-right">Max</th>
+                            <th className="pb-2 px-3 font-medium text-ink-muted text-2xs uppercase tracking-wider text-right">Spread</th>
+                            <th className="pb-2 pl-3 font-medium text-ink-muted text-2xs uppercase tracking-wider text-right">Samples</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {analytics.data.series.map((series, index) => {
+                            const { code, label } = splitAssetName(series.assetName);
+                            return (
+                              <tr key={series.assetId} className="border-b border-line-faint last:border-0">
+                                <td className="py-2 pr-3">
+                                  <span className="flex items-center gap-2">
+                                    <span
+                                      className="size-2.5 shrink-0 rounded-xs"
+                                      style={{ background: chartColor(index) }}
+                                      aria-hidden
+                                    />
+                                    <span>
+                                      <span className="tabular block text-2xs text-ink-muted">{code}</span>
+                                      <span className="block text-ink">{label}</span>
+                                    </span>
+                                  </span>
+                                </td>
+                                <td className="py-2 px-3 text-right tabular text-ink-soft" data-numeric>
+                                  {series.min} {series.unit}
+                                </td>
+                                <td className="py-2 px-3 text-right tabular text-ink" data-numeric>
+                                  {series.avg} {series.unit}
+                                </td>
+                                <td className="py-2 px-3 text-right tabular text-ink-soft" data-numeric>
+                                  {series.max} {series.unit}
+                                </td>
+                                <td className="py-2 px-3 text-right tabular text-ink-soft" data-numeric>
+                                  {Math.round((series.max - series.min) * 100) / 100} {series.unit}
+                                </td>
+                                <td className="py-2 pl-3 text-right tabular text-ink-muted" data-numeric>
+                                  {series.points.length}
+                                </td>
+                              </tr>
+                            );
+                          })}
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+                )}
+              </>
             )}
           </CardContent>
         </Card>
       </section>
-
-      {analytics.data && analytics.data.series.length > 0 ? (
-        <Card className="mt-3">
-          <CardHeader>
-            <div>
-              <CardTitle>Series summary</CardTitle>
-              <CardDescription>
-                Minimum, mean and maximum of each compared series across the window.
-              </CardDescription>
-            </div>
-          </CardHeader>
-          <CardContent className="p-0">
-            <Table>
-              <TableHeader>
-                <TableRow className="hover:bg-transparent">
-                  <TableHead>Asset</TableHead>
-                  <TableHead className="text-right">Min</TableHead>
-                  <TableHead className="text-right">Mean</TableHead>
-                  <TableHead className="text-right">Max</TableHead>
-                  <TableHead className="text-right">Spread</TableHead>
-                  <TableHead className="text-right">Samples</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {analytics.data.series.map((series, index) => {
-                  const { code, label } = splitAssetName(series.assetName);
-                  return (
-                    <TableRow key={series.assetId}>
-                      <TableCell>
-                        <span className="flex items-center gap-2">
-                          <span
-                            className="size-2.5 shrink-0 rounded-xs"
-                            style={{ background: chartColor(index) }}
-                            aria-hidden
-                          />
-                          <span>
-                            <span className="tabular block text-2xs text-ink-muted">{code}</span>
-                            <span className="block text-sm text-ink">{label}</span>
-                          </span>
-                        </span>
-                      </TableCell>
-                      <TableCell className="text-right" data-numeric>
-                        {series.min} {series.unit}
-                      </TableCell>
-                      <TableCell className="text-right text-ink" data-numeric>
-                        {series.avg} {series.unit}
-                      </TableCell>
-                      <TableCell className="text-right" data-numeric>
-                        {series.max} {series.unit}
-                      </TableCell>
-                      <TableCell className="text-right" data-numeric>
-                        {Math.round((series.max - series.min) * 100) / 100} {series.unit}
-                      </TableCell>
-                      <TableCell className="text-right" data-numeric>
-                        {series.points.length}
-                      </TableCell>
-                    </TableRow>
-                  );
-                })}
-              </TableBody>
-            </Table>
-          </CardContent>
-        </Card>
-      ) : null}
     </>
   );
 }

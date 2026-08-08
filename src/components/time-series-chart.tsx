@@ -24,24 +24,53 @@ interface MergedPoint {
 
 /**
  * Recharts wants one row per x-value, so the per-asset series are pivoted into
- * a single table keyed by bucket timestamp. Gaps stay `null` rather than 0 so a
- * missing sample draws a break instead of a spike to the floor.
+ * a single table keyed by bucket timestamp. Missing buckets are generated and
+ * filled with `null` so the x-axis is continuous — gaps in the data render as
+ * breaks in the line rather than missing x-values.
  */
-function mergeSeries(series: MetricSeries[]): MergedPoint[] {
+function mergeSeries(series: MetricSeries[], bucket: Bucket): MergedPoint[] {
+  if (series.length === 0) return [];
+
   const byTime = new Map<string, MergedPoint>();
+  const assetKeys: string[] = [];
 
   for (const entry of series) {
+    const key = String(entry.assetId);
+    if (!assetKeys.includes(key)) assetKeys.push(key);
     for (const point of entry.points) {
       let row = byTime.get(point.t);
       if (!row) {
         row = { t: point.t };
         byTime.set(point.t, row);
       }
-      row[String(entry.assetId)] = point.v;
+      row[key] = point.v;
     }
   }
 
-  return [...byTime.values()].sort((a, b) => a.t.localeCompare(b.t));
+  // Collect every timestamp that appears in any series.
+  const existingTimes = [...byTime.keys()].sort();
+  if (existingTimes.length === 0) return [];
+
+  // Generate the complete time range so the x-axis has no holes.
+  const stepMs = bucket === "hour" ? 3_600_000 : 86_400_000;
+  const startMs = new Date(existingTimes[0]).getTime();
+  const endMs = new Date(existingTimes[existingTimes.length - 1]).getTime();
+
+  const fullRange: MergedPoint[] = [];
+  for (let t = startMs; t <= endMs; t += stepMs) {
+    const iso = new Date(t).toISOString().slice(0, 19) + "Z";
+    const existing = byTime.get(iso);
+    if (existing) {
+      fullRange.push(existing);
+    } else {
+      // Bucket with no data for any asset — fill every key with null.
+      const row: MergedPoint = { t: iso };
+      for (const key of assetKeys) row[key] = null;
+      fullRange.push(row);
+    }
+  }
+
+  return fullRange;
 }
 
 function tickFormatter(value: string, bucket: Bucket): string {
@@ -112,7 +141,7 @@ export function TimeSeriesChart({
   colorBy?: "series" | "metric";
   showLegend?: boolean;
 }) {
-  const data = useMemo(() => mergeSeries(series), [series]);
+  const data = useMemo(() => mergeSeries(series, bucket), [series, bucket]);
 
   const palette = useMemo(
     () =>
