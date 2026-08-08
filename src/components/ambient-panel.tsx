@@ -113,7 +113,7 @@ export function AmbientPanel({
   );
 }
 
-/** Twelve-hour temperature ridge; height encodes temperature within the window. */
+/** Twelve-hour temperature forecast bars — vibrant blue, taller, with glow on hover. */
 function ForecastStrip({ ambient }: { ambient: AmbientSummary }) {
   const points = ambient.forecast.slice(0, 12);
   if (points.length === 0) return null;
@@ -124,15 +124,19 @@ function ForecastStrip({ ambient }: { ambient: AmbientSummary }) {
   const span = max - min || 1;
 
   return (
-    <ul className="mt-2 flex items-end gap-1">
+    <ul className="mt-2.5 flex items-end gap-[3px]">
       {points.map((point, index) => {
-        const height = 18 + ((point.temperature - min) / span) * 26;
+        const pct = (point.temperature - min) / span;
+        const height = 14 + pct * 28; // 14px min, 42px max
         return (
-          <li key={point.t} className="flex flex-1 flex-col items-center gap-1">
+          <li key={point.t} className="group relative flex flex-1 flex-col items-center gap-1">
+            {/* Tooltip */}
+            <span className="pointer-events-none absolute bottom-full left-1/2 z-10 mb-1 -translate-x-1/2 whitespace-nowrap rounded-md border border-line bg-overlay px-2 py-1 text-2xs text-ink opacity-0 shadow-lg transition-opacity group-hover:opacity-100">
+              {formatNumber(point.temperature, 1)} °C
+            </span>
             <span
-              className="w-full rounded-t-xs bg-brand/45 transition-[height] motion-slow"
+              className="w-full rounded-t-sm bg-gradient-to-t from-brand/70 to-brand transition-[height,filter] motion-base group-hover:shadow-[0_0_8px_var(--color-brand)]"
               style={{ height: `${height}px` }}
-              title={`${formatNumber(point.temperature, 1)} °C`}
               aria-hidden
             />
             {index % 3 === 0 ? (

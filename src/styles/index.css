@@ -258,6 +258,13 @@
   border: 1px solid var(--sig-panel-border);
   border-radius: var(--sig-panel-radius);
   box-shadow: var(--sig-panel-shadow);
+  transition: border-color var(--sig-duration-fast) var(--sig-ease-out);
+}
+
+@utility panel-hover {
+  &:hover {
+    border-color: color-mix(in oklab, var(--sig-brand) 40%, transparent);
+  }
 }
 
 @utility label-caps {

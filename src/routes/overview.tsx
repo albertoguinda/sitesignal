@@ -1,11 +1,12 @@
 import { useSearchParams } from "react-router";
-import { Activity, BellRing, HeartPulse, Waves } from "lucide-react";
+import { Activity, BellRing, HeartPulse, Waves, ArrowRight } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { PageHeader } from "@/components/page-header";
 import { SiteSelector } from "@/components/site-selector";
 import { KpiCard } from "@/components/kpi-card";
 import { AssetDistribution } from "@/components/asset-distribution";
 import { ForecastCards } from "@/components/forecast-cards";
+import { MetricSparkCards } from "@/components/metric-spark-cards";
 import { AssetTable } from "@/components/asset-table";
 import { AlertFeed } from "@/components/alert-feed";
 import { AmbientPanel } from "@/components/ambient-panel";
@@ -52,7 +53,7 @@ export default function OverviewPage() {
       : (sites.data?.find((site) => site.id === siteId)?.name ?? "Site");
 
   return (
-    <>
+    <div className="space-y-6">
       <PageHeader
         eyebrow="Fleet"
         title="Overview"
@@ -71,10 +72,13 @@ export default function OverviewPage() {
         </Card>
       ) : null}
 
-      <section aria-label="Key indicators" className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+      {/* ═══════════════════════════════════════════════════════════════
+          ROW 1 — KPI Cards (4 across)
+         ═══════════════════════════════════════════════════════════════ */}
+      <section aria-label="Key indicators" className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
         {overview.isPending || !kpis
           ? Array.from({ length: 4 }, (_, index) => (
-              <Skeleton key={index} className="h-[8.5rem] rounded-lg" />
+              <Skeleton key={index} className="h-36 rounded-lg" />
             ))
           : [
               <KpiCard
@@ -120,60 +124,35 @@ export default function OverviewPage() {
             ]}
       </section>
 
-      {/* Fleet distribution — one card spanning full width between KPIs and ambient */}
+      {/* ═══════════════════════════════════════════════════════════════
+          ROW 2 — Spark Metric Cards (3 across)
+         ═══════════════════════════════════════════════════════════════ */}
       {overview.data && overview.data.assets.length > 0 ? (
-        <section aria-label="Fleet distribution" className="mt-3">
-          <AssetDistribution assets={overview.data.assets} />
-        </section>
+        <MetricSparkCards assets={overview.data.assets} />
       ) : null}
 
-      {overview.data && overview.data.ambient.length > 0 ? (
-        <section
-          aria-label="Ambient conditions"
-          className="mt-3 grid gap-3 md:grid-cols-2 xl:grid-cols-3"
-        >
-          {overview.data.ambient.map((ambient) => (
-            <div key={ambient.siteId} className="panel px-4 py-3.5">
-              <AmbientPanel ambient={ambient} compact />
-            </div>
-          ))}
-        </section>
-      ) : null}
+      {/* ═══════════════════════════════════════════════════════════════
+          BENTO BLOCK — Fleet + Alerts + Assets
+          Fleet by Type (left) | Recent alerts (right, spans 2 rows)
+          Assets table  (left) | Recent alerts continues
+         ═══════════════════════════════════════════════════════════════ */}
+      <div className="grid gap-4 xl:grid-cols-[1fr_340px]">
+        {/* Fleet distribution — left column, row 1 */}
+        {overview.data && overview.data.assets.length > 0 ? (
+          <section aria-label="Fleet distribution" className="xl:row-start-1 xl:col-start-1">
+            <AssetDistribution assets={overview.data.assets} />
+          </section>
+        ) : null}
 
-      {/* Forecast bar charts — one card per site */}
-      {overview.data ? (
-        <ForecastCards sites={overview.data.ambient} />
-      ) : null}
-
-      {/* The asset table carries eight columns; the alert rail is given a fixed
-          width so the table keeps every pixel that is left. */}
-      <section className="mt-3 grid gap-3 xl:grid-cols-[minmax(0,1fr)_21rem]">
-        <Card className="min-w-0">
+        {/* Recent alerts — right column, spans both rows */}
+        <Card className="flex flex-col overflow-hidden xl:row-start-1 xl:row-span-2 xl:col-start-2">
           <CardHeader>
-            <div>
-              <CardTitle>Assets</CardTitle>
-              <CardDescription>
-                Latest value per metric, with the count of alerts still open. Sort any column.
-              </CardDescription>
-            </div>
-          </CardHeader>
-          <CardContent className="p-0">
-            {overview.isPending ? (
-              <SkeletonRows rows={8} />
-            ) : (
-              <AssetTable assets={overview.data?.assets ?? []} showSite={siteId === undefined} />
-            )}
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader>
-            <div>
+            <div className="flex items-center justify-between">
               <CardTitle>Recent alerts</CardTitle>
-              <CardDescription>Open first, then acknowledged, then resolved.</CardDescription>
+              <ArrowRight className="size-4 text-ink-muted ml-auto" aria-hidden />
             </div>
           </CardHeader>
-          <CardContent className="p-0">
+          <CardContent className="min-h-0 flex-1 overflow-y-auto p-0">
             {overview.isPending ? (
               <SkeletonRows rows={6} />
             ) : (
@@ -181,7 +160,51 @@ export default function OverviewPage() {
             )}
           </CardContent>
         </Card>
-      </section>
-    </>
+
+        {/* Assets table — left column */}
+        <Card className="min-w-0 overflow-hidden self-start">
+          <CardHeader>
+            <div className="flex items-center justify-between gap-4">
+              <div>
+                <CardTitle>Assets</CardTitle>
+                <CardDescription>
+                  Latest value per metric, with the count of alerts still open.
+                </CardDescription>
+              </div>
+              {overview.data && overview.data.assets.length > 0 && (
+                <span className="ml-auto shrink-0 rounded-full bg-sunken px-2.5 py-1 text-2xs tabular text-ink-muted">
+                  {overview.data.assets.length} assets
+                </span>
+              )}
+            </div>
+          </CardHeader>
+          <CardContent className="p-0">
+            <div className="max-h-[340px] overflow-auto">
+              {overview.isPending ? (
+                <SkeletonRows rows={8} />
+              ) : (
+                <AssetTable assets={overview.data?.assets ?? []} showSite={siteId === undefined} />
+              )}
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* ═══════════════════════════════════════════════════════════════
+          Ambient + Forecast side by side
+         ═══════════════════════════════════════════════════════════════ */}
+      {overview.data && overview.data.ambient.length > 0 ? (
+        <div className="grid gap-4 xl:grid-cols-[1fr_380px]">
+          <ForecastCards sites={overview.data.ambient} />
+          <section aria-label="Ambient conditions" className="flex flex-col gap-4">
+            {overview.data.ambient.map((ambient) => (
+              <div key={ambient.siteId} className="panel px-4 py-3.5">
+                <AmbientPanel ambient={ambient} compact />
+              </div>
+            ))}
+          </section>
+        </div>
+      ) : null}
+    </div>
   );
 }

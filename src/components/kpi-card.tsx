@@ -60,7 +60,7 @@ export function KpiCard({
         {icon ? <span className="text-ink-faint">{icon}</span> : null}
       </div>
 
-      <p className="mt-2 flex items-baseline gap-1.5">
+      <p className="mt-3 flex items-baseline gap-1.5">
         <span className={cn("tabular text-3xl font-semibold leading-none", VALUE_INK[tone])}>
           {value}
         </span>
@@ -68,7 +68,7 @@ export function KpiCard({
       </p>
 
       {segments && total > 0 ? (
-        <div className="mt-3">
+        <div className="mt-4">
           <div
             className="flex h-2 w-full overflow-hidden rounded-full bg-sunken"
             role="img"
@@ -79,12 +79,12 @@ export function KpiCard({
               .map((segment) => (
                 <span
                   key={segment.label}
-                  className={cn("block shrink-0", ACCENT[segment.tone])}
+                  className={cn("block shrink-0 transition-[width] motion-base", ACCENT[segment.tone])}
                   style={{ width: `${(segment.value / total) * 100}%` }}
                 />
               ))}
           </div>
-          <ul className="mt-2 flex flex-wrap gap-x-3 gap-y-1">
+          <ul className="mt-2.5 flex flex-wrap gap-x-3.5 gap-y-1.5">
             {segments.map((segment) => (
               <li key={segment.label} className="flex items-center gap-1.5 text-2xs text-ink-muted">
                 <span className={cn("size-1.5 rounded-full", ACCENT[segment.tone])} aria-hidden />
@@ -95,7 +95,7 @@ export function KpiCard({
           </ul>
         </div>
       ) : hint ? (
-        <p className="mt-2.5 text-xs text-ink-muted">{hint}</p>
+        <p className="mt-3 text-xs text-ink-muted">{hint}</p>
       ) : null}
     </article>
   );

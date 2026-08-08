@@ -36,10 +36,10 @@ export function AlertFeed({
       {alerts.map((alert) => {
         const { code, label } = splitAssetName(alert.assetName);
         return (
-          <li key={alert.id} className="relative flex gap-3 px-4 py-3">
+          <li key={alert.id} className="relative flex gap-3 px-4 py-3 transition-colors motion-fast hover:bg-elevated/50">
             <span
               className={cn(
-                "absolute left-0 top-3 h-[calc(100%-1.5rem)] w-0.5 rounded-full",
+                "absolute left-1 top-3 h-[calc(100%-1.5rem)] w-0.5 rounded-full",
                 SEVERITY_RAIL[alert.severity],
                 alert.state === "resolved" && "opacity-35",
               )}

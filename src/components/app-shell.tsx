@@ -24,11 +24,11 @@ const NAV_ITEMS = [
 ];
 
 const DROPDOWN_ITEMS = [
-  { label: "My profile", icon: User },
-  { label: "Notifications", icon: Bell },
-  { label: "Settings", icon: Settings },
-  { label: "Appearance", icon: Moon },
-  { label: "Help & support", icon: HelpCircle },
+  { label: "My profile", icon: User, action: "profile" as const },
+  { label: "Notifications", icon: Bell, action: "notifications" as const },
+  { label: "Settings", icon: Settings, action: "settings" as const },
+  { label: "Appearance", icon: Moon, action: "appearance" as const },
+  { label: "Help & support", icon: HelpCircle, action: "help" as const },
 ];
 
 /** Wall clock — live, not decorative. */
@@ -41,7 +41,7 @@ function LiveClock() {
   }, []);
 
   return (
-    <div className="hidden items-center gap-2 text-xs text-ink-muted sm:flex" aria-live="polite">
+    <div className="hidden items-center gap-2 text-xs text-ink-muted sm:flex">
       <span className="relative flex size-2" aria-hidden>
         <span className="absolute inline-flex size-full animate-pulse-ring rounded-full bg-ok" />
         <span className="relative inline-flex size-2 rounded-full bg-ok" />
@@ -75,9 +75,32 @@ function ProfileDropdown({
   setCurrentOrgId: (id: string | undefined) => void;
 }) {
   const [open, setOpen] = useState(false);
+  const [toast, setToast] = useState<string | null>(null);
   const ref = useRef<HTMLDivElement>(null);
   const buttonRef = useRef<HTMLButtonElement>(null);
   const menuRef = useRef<HTMLDivElement>(null);
+
+  const handleAction = useCallback((action: string) => {
+    setOpen(false);
+    switch (action) {
+      case "profile":
+        setToast("Profile settings coming soon");
+        break;
+      case "notifications":
+        setToast("No new notifications");
+        break;
+      case "settings":
+        setToast("Settings panel coming soon");
+        break;
+      case "appearance":
+        setToast("Theme toggled");
+        break;
+      case "help":
+        setToast("Help docs coming soon");
+        break;
+    }
+    setTimeout(() => setToast(null), 2500);
+  }, []);
 
   const close = useCallback(() => {
     setOpen(false);
@@ -145,20 +168,20 @@ function ProfileDropdown({
         aria-haspopup="menu"
         aria-label={`User menu: ${user.name}`}
         className={cn(
-          "flex items-center gap-2 rounded-lg px-2 py-1.5 text-left transition-all motion-fast",
+          "flex items-center gap-5 rounded-lg px-4 py-2 text-left transition-all motion-fast",
           "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus focus-visible:ring-offset-2 focus-visible:ring-offset-base",
           "hover:bg-elevated",
           open && "bg-elevated",
         )}
       >
         {/* Avatar with neon glow */}
-        <span className="relative flex size-8 shrink-0 items-center justify-center rounded-full bg-brand/20 ring-2 ring-brand/40">
+        <span className="relative flex size-9 shrink-0 items-center justify-center rounded-full bg-brand/20 ring-2 ring-brand/40">
           <span className="text-xs font-bold text-brand">{initials}</span>
           <span className="absolute -bottom-0.5 -right-0.5 size-2.5 rounded-full border-2 border-base bg-ok" aria-hidden />
         </span>
-        <span className="hidden flex-col text-left sm:block">
-          <span className="text-xs font-medium text-ink leading-tight">{user.name}</span>
-          <span className="text-2xs text-ink-muted leading-tight">{user.email}</span>
+        <span className="hidden flex-col text-left gap-1.5 sm:flex">
+          <span className="text-xs font-semibold text-ink leading-tight">{user.name}</span>
+          <span className="text-[0.65rem] text-ink-muted leading-tight">{user.email}</span>
         </span>
         <ChevronDown
           className={cn(
@@ -226,7 +249,7 @@ function ProfileDropdown({
                 key={item.label}
                 role="menuitem"
                 type="button"
-                onClick={close}
+                onClick={() => handleAction(item.action)}
                 className={cn(
                   "flex w-full items-center gap-3 rounded-lg px-3 py-2 text-sm text-ink-soft",
                   "transition-colors motion-fast",
@@ -245,7 +268,7 @@ function ProfileDropdown({
             <button
               role="menuitem"
               type="button"
-              onClick={close}
+              onClick={() => { close(); setToast("Signed out"); setTimeout(() => setToast(null), 2500); }}
               className={cn(
                 "flex w-full items-center gap-3 rounded-lg px-3 py-2 text-sm text-critical",
                 "transition-colors motion-fast",
@@ -257,6 +280,17 @@ function ProfileDropdown({
               Sign out
             </button>
           </div>
+        </div>
+      )}
+
+      {/* Toast notification */}
+      {toast && (
+        <div
+          role="status"
+          aria-live="polite"
+          className="fixed bottom-6 left-1/2 z-[300] -translate-x-1/2 rounded-xl border border-line bg-glass px-4 py-2.5 text-sm text-ink shadow-lg shadow-black/40 backdrop-blur-xl animate-rise"
+        >
+          {toast}
         </div>
       )}
     </div>
@@ -286,7 +320,7 @@ export function AppShell({ children }: { children: ReactNode }) {
           aria-hidden
         />
 
-        <div className="flex h-14 w-full items-center gap-4 px-4 sm:gap-6 sm:px-6">
+        <div className="flex h-14 w-full items-center gap-4 px-4 sm:gap-6 sm:px-6 lg:px-8">
           {/* Logo */}
           <NavLink to="/" className="flex items-center gap-2.5 shrink-0" aria-label="SiteSignal home">
             <span className="grid size-7 place-items-center rounded-lg border border-brand/40 bg-brand-wash shadow-[var(--sig-neon-brand)]">
@@ -309,7 +343,7 @@ export function AppShell({ children }: { children: ReactNode }) {
                     "inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-semibold transition-all motion-fast",
                     "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus",
                     isActive
-                      ? "bg-brand-wash text-brand shadow-[0_0_12px_color-mix(in_oklab,var(--sig-cyan-400)_25%,transparent)]"
+                      ? "bg-brand-wash text-brand shadow-[0_0_12px_color-mix(in_oklab,var(--sig-brand)_25%,transparent)]"
                       : "text-ink-muted hover:bg-elevated hover:text-ink",
                   )
                 }
@@ -321,8 +355,11 @@ export function AppShell({ children }: { children: ReactNode }) {
           </nav>
 
           {/* Right section */}
-          <div className="ml-auto flex items-center gap-3 sm:gap-4">
+          <div className="ml-auto flex items-center gap-6 sm:gap-8 pr-2">
             <LiveClock />
+
+            {/* Visual separator */}
+            <span className="hidden h-5 w-px bg-line-faint sm:block" aria-hidden />
 
             {user && (
               <ProfileDropdown
@@ -338,7 +375,9 @@ export function AppShell({ children }: { children: ReactNode }) {
 
       {/* ── Main: full-width, no max-w constraint ───────────────────── */}
       <main id="main" className="flex-1 px-4 py-6 sm:px-6 lg:px-8">
-        {children}
+        <div className="mx-auto max-w-[var(--sig-content-max)]">
+          {children}
+        </div>
       </main>
 
       {/* ── Footer ──────────────────────────────────────────────────── */}

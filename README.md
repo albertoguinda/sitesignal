@@ -1,12 +1,12 @@
 # SiteSignal
 
-[![ci](https://github.com/albertoguinda/sitesignal/actions/workflows/ci.yml/badge.svg)](https://github.com/albertoguinda/sitesignal/actions/workflows/ci.yml)
 [![tests](https://img.shields.io/badge/tests%20-%20193-passing-brightgreen)](#testing)
-[![docker](https://img.shields.io/badge/docker-ready-blue)](#docker)
+[![docker](https://img.shields.io/badge/docker-ready-blue)](#deploy)
+[![typescript](https://img.shields.io/badge/typescript-strict-3178c6)](#tech-stack)
 
-**Fork this repo, connect your IoT sensors, deploy to Replit -- you have a production monitoring dashboard with 3D visualization in under 10 minutes.**
+**Live demo: [https://sitesignalui.vercel.app](https://sitesignalui.vercel.app)**
 
-SiteSignal is a remixable industrial monitoring template. It ships with real telemetry data, an interactive 3D floor plan, authentication, multi-tenancy, a documented design system, and a full test suite. Fork it, swap the data source for your own sensors, and you have a production-ready dashboard.
+SiteSignal is an industrial asset monitoring dashboard. It ships with real telemetry data — 3 industrial sites, 18 machines, 60 days of readings — an interactive 3D floor plan, multi-asset analytics, authentication, multi-tenancy, a documented design system, and a 193-test suite. Replace the seed data with your own IoT pipeline and you have a production-ready monitoring platform.
 
 ![Overview: KPI cards, per-site ambient conditions, sortable asset table and live alert feed](docs/media/overview.png)
 
@@ -16,39 +16,66 @@ SiteSignal is a remixable industrial monitoring template. It ships with real tel
 
 ## Key Features
 
-- **3D Interactive Floor Plan** -- Built with react-three-fiber. Clickable hotspots pulse by severity, orbit controls let you navigate the space, and selecting a hotspot loads real-time sensor data into a side panel.
-- **Remixable Template** -- Not a throwaway demo. Fork the repo, point it at your data, and build on top of a production architecture. The seed script generates 3 industrial sites, 18 machines, and 60 days of telemetry so you see real data immediately.
-- **Design System** -- A living `/design-system` route renders every color token, type scale, spacing unit, and component variant live. No hunting through Figma for the right shade.
-- **Production Architecture** -- React 19, Vite 8, Express 5, Drizzle ORM, PostgreSQL (PGlite for zero-config local dev). The same code runs locally and in Docker.
-- **193 Tests** -- Full Vitest suite covering utilities, components, and API routes. Coverage reporting built in.
-- **Multi-tenancy** -- Organizations, role-based access (admin/member/viewer), team invitations, and data isolation. Ready for SaaS deployment.
-- **Magic Link Auth** -- Passwordless login with secure session cookies, rate limiting, and security headers. Swap in your email provider for production.
+- **Interactive 3D Floor Plan** — Built with react-three-fiber. Clickable hotspots pulse by severity, orbit controls let you navigate the space, and selecting a hotspot loads real-time sensor data into a side panel.
+- **Multi-Asset Analytics** — Compare the same metric across up to six assets over 24 h / 7 d / 30 d / 60 d windows, with aggregated stats and per-series summaries. Charts render from real bucketed readings, not mock data.
+- **Live Overview Dashboard** — KPI cards, sparkline-style metric highlights, fleet distribution, sortable asset table with sticky headers, per-site weather forecasts, and a live alert feed.
+- **Design System** — A living `/design-system` route renders every color token, type scale, spacing unit, and component variant live.
+- **Production Architecture** — React 19, Vite 8, Express 5, Drizzle ORM, PostgreSQL (PGlite for zero-config local dev). The same code runs locally, in Docker, and on Vercel serverless functions.
+- **193 Tests** — Full Vitest suite covering utilities, components, and API routes, with coverage reporting built in.
+- **Multi-tenancy** — Organizations, role-based access (admin/member/viewer), and data isolation. Ready for SaaS deployment.
+- **Magic Link Auth** — Passwordless login with secure session cookies, rate limiting, and security headers.
 
 ---
 
 ## Quick Start
 
 ```bash
-# Fork the repo on GitHub, then:
-git clone https://github.com/YOUR_USERNAME/sitesignal.git
+git clone https://github.com/albertoguinda/sitesignal.git
 cd sitesignal
 npm install
 npm run dev
 ```
 
-Open [http://localhost:5000](http://localhost:5000). That is it. PGlite runs embedded -- no database server required. The seed script has already loaded 3 sites, 18 machines, and 60 days of telemetry.
+Open [http://localhost:5000](http://localhost:5000). PGlite runs embedded — no database server required. The seed data (3 sites, 18 machines, 60 days of telemetry) is already loaded.
 
-On Replit: import the repo, hit Run. The `.replit` config handles everything.
+Requires Node 24.
 
 ---
 
-## How to Remix
+## Deploy
 
-SiteSignal is a template, not a closed product. Here is how to make it yours:
+### Vercel (recommended)
+
+```bash
+npx vercel --prod
+```
+
+The project includes a `vercel.json` with serverless function routing — the Express API and the static client deploy as one project. The production build (`tsc -b && vite build`) runs in CI-grade checks on every deployment.
+
+### Docker
+
+```bash
+docker compose up
+```
+
+Multi-stage Dockerfile produces a minimal production image; the compose file includes PostgreSQL. One command, full stack.
+
+### Anywhere Else
+
+```bash
+npm run build
+npm start
+```
+
+Binds to port 5000. Set `DATABASE_URL` for external PostgreSQL, or leave it unset for embedded PGlite.
+
+---
+
+## How to Make It Yours
 
 **1. Connect your own sensors**
 
-Replace the seed data in `server/db/seed.ts` with your actual IoT telemetry pipeline. The schema in `server/db/schema.ts` defines `readings` and `alerts` -- insert rows from MQTT, HTTP webhooks, or any ingestion path.
+Replace the seed data in `server/db/seed.ts` with your IoT telemetry pipeline. The schema in `server/db/schema.ts` defines `readings` and `alerts` — insert rows from MQTT, HTTP webhooks, or any ingestion path.
 
 **2. Change the floor plan**
 
@@ -57,10 +84,6 @@ Edit the 3D scene in `src/components/asset-scene.tsx`. The `Hotspot` component a
 **3. Adjust the data model**
 
 Add new asset types in `shared/types.ts`, extend the schema in `server/db/schema.ts`, run `npm run db:generate`, and the API + UI follow the shared contract.
-
-**4. Deploy**
-
-Push to GitHub, connect to Replit, and deploy. Or `docker compose up` for self-hosted.
 
 ---
 
@@ -76,7 +99,7 @@ DOMAIN              shared/types.ts (TypeScript contract between client/server)
 INFRASTRUCTURE      Express 5 + Drizzle ORM + PostgreSQL (PGlite or external)
 ```
 
-The type contract in `shared/types.ts` is the single source of truth. Server and client both import from it -- no drift, no `any`.
+The type contract in `shared/types.ts` is the single source of truth. Server and client both import from it — no drift, no `any`.
 
 | Layer | Tech | Purpose |
 |-------|------|---------|
@@ -96,7 +119,7 @@ The type contract in `shared/types.ts` is the single source of truth. Server and
 
 | Category | Technology | Version |
 |----------|-----------|---------|
-| Runtime | Node.js | 20.19+ (22.x recommended) |
+| Runtime | Node.js | 24.x |
 | Frontend | React | 19.2 |
 | Build | Vite | 8.2 |
 | Styling | Tailwind CSS | v4 |
@@ -116,10 +139,11 @@ The type contract in `shared/types.ts` is the single source of truth. Server and
 
 | View | Description |
 |------|-------------|
-| ![Overview](docs/media/overview.png) | **Dashboard** -- KPI cards, per-site ambient conditions, sortable asset table, live alert feed |
-| ![Hotspot](docs/media/hotspot.gif) | **3D Floor Plan** -- Click a pulsing hotspot, sensor panel updates in real time |
-| ![Asset Detail](docs/media/asset-detail.png) | **Asset Detail** -- Full telemetry view for a single machine with 3D context |
-| ![Design System](docs/media/design-system.png) | **Design System** -- Every token, type scale, and component rendered live at `/design-system` |
+| ![Overview](docs/media/overview.png) | **Dashboard** — KPI cards, per-site ambient conditions, sortable asset table, live alert feed |
+| ![Hotspot](docs/media/hotspot.gif) | **3D Floor Plan** — Click a pulsing hotspot, sensor panel updates in real time |
+| ![Asset Detail](docs/media/asset-detail.png) | **Asset Detail** — Full telemetry view for a single machine with 3D context |
+| ![Analytics](docs/media/analytics.png) | **Analytics** — Multi-asset metric comparison with aggregated stats and series summary |
+| ![Design System](docs/media/design-system.png) | **Design System** — Every token, type scale, and component rendered live at `/design-system` |
 
 ---
 
@@ -135,40 +159,11 @@ npm run test:run
 # Coverage report
 npm run test:coverage
 
-# Type checking
+# Type checking (strict, zero any)
 npm run typecheck
 ```
 
-Tests live in `src/lib/__tests__/` and `server/__tests__/` and use Vitest with Testing Library. The CI workflow runs on every push.
-
----
-
-## Deploy
-
-### Replit (recommended for Buildathon)
-
-1. Fork this repo on GitHub
-2. Import into Replit
-3. Hit Run
-
-The `.replit` configuration handles Node version, port binding, and build commands. Deployment targets autoscale by default.
-
-### Docker
-
-```bash
-docker compose up
-```
-
-Multi-stage Dockerfile produces a minimal production image. The compose file includes PostgreSQL. One command, full stack.
-
-### Anywhere Else
-
-```bash
-npm run build
-npm start
-```
-
-Binds to port 5000. Set `DATABASE_URL` for external PostgreSQL, or leave it unset for embedded PGlite.
+Tests live in `src/lib/__tests__/` and `server/__tests__/` and use Vitest with Testing Library.
 
 ---
 
@@ -194,4 +189,4 @@ Binds to port 5000. Set `DATABASE_URL` for external PostgreSQL, or leave it unse
 
 ---
 
-MIT -- see [LICENSE](./LICENSE)
+MIT — see [LICENSE](./LICENSE)

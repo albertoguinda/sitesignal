@@ -1,13 +1,23 @@
 node_modules/
 dist/
-.env
-.env.local
+.env*
+!.env.example
 # The live PGlite cluster is generated; only the seeded snapshot is committed.
 data/*
 !data/sitesignal-seed.tar.gz
 *.local
 .DS_Store
 node_modules/.tmp/
+
+# Local tooling state (machine paths, permissions)
+.claude/
+.replit
+
+# Development process docs — not part of the shipped product
+docs/STRATEGY.md
+docs/PHASE-1-TASKS.md
+docs/PHASE-2-TASKS.md
+docs/CONTRA-CHALLENGE-PLAN.md
 
 # Replit workspace state (the .replit config itself IS committed)
 .config/

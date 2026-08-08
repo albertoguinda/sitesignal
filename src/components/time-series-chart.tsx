@@ -12,7 +12,7 @@ import {
 } from "recharts";
 import type { Metric, MetricSeries } from "@shared/types";
 import { chartColor, metricColor, readToken } from "@/theme/tokens";
-import { formatMetric, metricDigits, splitAssetName } from "@/lib/format";
+import { formatMetric, splitAssetName } from "@/lib/format";
 import { EmptyState } from "@/components/states";
 
 type Bucket = "hour" | "day";
@@ -145,6 +145,24 @@ export function TimeSeriesChart({
 }) {
   const data = useMemo(() => mergeSeries(series, bucket), [series, bucket]);
 
+  // Y domain padded from the actual data span: flat series (all values equal)
+  // still get a readable axis, and tight spans don't collapse into one tick.
+  const yDomain = useMemo(() => {
+    if (data.length === 0) return null;
+    let lo = Number.POSITIVE_INFINITY;
+    let hi = Number.NEGATIVE_INFINITY;
+    for (const row of data) {
+      for (const value of Object.values(row)) {
+        if (typeof value !== "number") continue;
+        if (value < lo) lo = value;
+        if (value > hi) hi = value;
+      }
+    }
+    if (!Number.isFinite(lo)) return null;
+    const pad = Math.max((hi - lo) * 0.1, 1);
+    return { lo: lo - pad, hi: hi + pad, span: hi - lo };
+  }, [data]);
+
   const palette = useMemo(
     () =>
       series.map((entry, index) =>
@@ -166,7 +184,7 @@ export function TimeSeriesChart({
   }
 
   return (
-    <figure className="m-0">
+    <figure className="m-0" aria-label={`${metric} trend for the selected assets`}>
       {/* The unit lives above the axis rather than as a rotated axis label:
           rotated glyphs at 11 px are unreadable on a dark ground. */}
       <figcaption className="label-caps mb-1 pl-1">{unit}</figcaption>
@@ -188,8 +206,10 @@ export function TimeSeriesChart({
           tickLine={false}
           axisLine={false}
           width={52}
-          tickFormatter={(value: number) => value.toFixed(metricDigits(metric) === 2 ? 1 : 0)}
-          domain={["auto", "auto"]}
+          tickFormatter={(value: number) =>
+            value.toFixed(yDomain && yDomain.span < 10 ? 1 : 0)
+          }
+          domain={yDomain ? [yDomain.lo, yDomain.hi] : ["auto", "auto"]}
         />
         <Tooltip
           cursor={{ stroke: axisColor, strokeDasharray: "3 3" }}
@@ -200,6 +220,7 @@ export function TimeSeriesChart({
             verticalAlign="top"
             align="left"
             height={28}
+            wrapperStyle={{ maxHeight: 56 }}
             iconType="plainline"
             iconSize={14}
             formatter={(value: string) => (

@@ -3,14 +3,12 @@ import { cn } from "@/lib/utils";
 
 export function Table({ className, ...props }: ComponentProps<"table">) {
   return (
-    <div className="w-full overflow-x-auto">
-      <table className={cn("w-full border-collapse text-sm", className)} {...props} />
-    </div>
+    <table className={cn("w-full border-collapse text-sm", className)} {...props} />
   );
 }
 
 export function TableHeader({ className, ...props }: ComponentProps<"thead">) {
-  return <thead className={cn("[&_tr]:border-b [&_tr]:border-line", className)} {...props} />;
+  return <thead className={cn("[&_tr]:border-b [&_tr]:border-line sticky top-0 z-10 bg-raised shadow-[0_1px_3px_0_rgb(0_0_0/0.3)]", className)} {...props} />;
 }
 
 export function TableBody({ className, ...props }: ComponentProps<"tbody">) {

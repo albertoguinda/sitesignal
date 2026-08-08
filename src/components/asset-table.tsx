@@ -117,9 +117,10 @@ export function AssetTable({
   }
 
   return (
-    <Table>
-      <TableHeader>
-        <TableRow className="hover:bg-transparent">
+    <div className="w-full">
+      <Table>
+        <TableHeader>
+          <TableRow className="hover:bg-transparent">
           <TableHead className="min-w-44">
             <SortButton
               label="Asset"
@@ -242,5 +243,6 @@ export function AssetTable({
         })}
       </TableBody>
     </Table>
+    </div>
   );
 }
