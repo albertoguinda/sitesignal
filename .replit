@@ -5,7 +5,7 @@
 # shell): if the account/template resolves a different major, change this line
 # and the `engines.node` range in package.json together. The project is
 # developed and verified on Node 22.17.
-modules = ["nodejs-22"]
+modules = ["nodejs-20"]
 
 entrypoint = "README.md"
 run = "npm run dev"
