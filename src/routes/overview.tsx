@@ -5,6 +5,7 @@ import { PageHeader } from "@/components/page-header";
 import { SiteSelector } from "@/components/site-selector";
 import { KpiCard } from "@/components/kpi-card";
 import { AssetDistribution } from "@/components/asset-distribution";
+import { ForecastCards } from "@/components/forecast-cards";
 import { AssetTable } from "@/components/asset-table";
 import { AlertFeed } from "@/components/alert-feed";
 import { AmbientPanel } from "@/components/ambient-panel";
@@ -137,6 +138,11 @@ export default function OverviewPage() {
             </div>
           ))}
         </section>
+      ) : null}
+
+      {/* Forecast bar charts — one card per site */}
+      {overview.data ? (
+        <ForecastCards sites={overview.data.ambient} />
       ) : null}
 
       {/* The asset table carries eight columns; the alert rail is given a fixed
