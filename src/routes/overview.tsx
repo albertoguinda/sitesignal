@@ -4,6 +4,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { PageHeader } from "@/components/page-header";
 import { SiteSelector } from "@/components/site-selector";
 import { KpiCard } from "@/components/kpi-card";
+import { AssetDistribution } from "@/components/asset-distribution";
 import { AssetTable } from "@/components/asset-table";
 import { AlertFeed } from "@/components/alert-feed";
 import { AmbientPanel } from "@/components/ambient-panel";
@@ -117,6 +118,13 @@ export default function OverviewPage() {
               />,
             ]}
       </section>
+
+      {/* Fleet distribution — one card spanning full width between KPIs and ambient */}
+      {overview.data && overview.data.assets.length > 0 ? (
+        <section aria-label="Fleet distribution" className="mt-3">
+          <AssetDistribution assets={overview.data.assets} />
+        </section>
+      ) : null}
 
       {overview.data && overview.data.ambient.length > 0 ? (
         <section
