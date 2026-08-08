@@ -23,7 +23,7 @@ type SortDirection = "asc" | "desc";
 const STATUS_ORDER: Record<AssetRow["status"], number> = { critical: 0, warning: 1, ok: 2 };
 
 function readingFor(asset: AssetRow, metric: Metric): number | null {
-  return asset.latest.find((entry) => entry.metric === metric)?.value ?? null;
+  return asset.latest?.find((entry) => entry.metric === metric)?.value ?? null;
 }
 
 /** Assets missing a metric always sort last, whichever direction is active. */

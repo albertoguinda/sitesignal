@@ -41,7 +41,7 @@ export default function AssetDetailPage() {
 
   const selected: AssetRow | null = useMemo(() => {
     if (!detail.data) return null;
-    return detail.data.siblings.find((asset) => asset.id === selectedId) ?? detail.data.asset;
+    return detail.data.siblings?.find((asset) => asset.id === selectedId) ?? detail.data.asset;
   }, [detail.data, selectedId]);
 
   if (Number.isNaN(assetId)) {

@@ -53,7 +53,7 @@ export default function AnalyticsPage() {
 
   /** Only assets that actually report the chosen metric can be compared on it. */
   const candidates = useMemo(
-    () => (assets.data ?? []).filter((asset) => asset.latest.some((r) => r.metric === metric)),
+    () => (assets.data ?? []).filter((asset) => asset.latest?.some((r) => r.metric === metric)),
     [assets.data, metric],
   );
 

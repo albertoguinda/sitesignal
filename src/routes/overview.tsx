@@ -37,12 +37,12 @@ export default function OverviewPage() {
   const overview = useOverview(siteId, currentOrgId);
 
   const kpis = overview.data?.kpis;
-  const temperature = kpis?.averages.find((entry) => entry.metric === "temperature");
+  const temperature = kpis?.averages?.find((entry) => entry.metric === "temperature");
   const otherAverages =
     kpis?.averages
-      .filter((entry) => entry.metric !== "temperature")
-      .map((entry) => `${entry.metric} ${formatNumber(entry.value, 1)} ${entry.unit}`)
-      .join(" · ") ?? "";
+      ?.filter((entry) => entry.metric !== "temperature")
+      ?.map((entry) => `${entry.metric} ${formatNumber(entry.value, 1)} ${entry.unit}`)
+      ?.join(" · ") ?? "";
 
   const scopeLabel =
     siteId === undefined

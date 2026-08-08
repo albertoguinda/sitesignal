@@ -199,6 +199,60 @@ app.get("/api/overview", async (req, res) => {
   }
 });
 
+// ── Asset list (matches AssetRow[], used by analytics picker) ────────
+app.get("/api/assets", async (req, res) => {
+  try {
+    const p = getPool();
+    const siteId = req.query.siteId ? Number(req.query.siteId) : undefined;
+    const orgId = req.query.orgId;
+
+    const assetScope = siteId !== undefined
+      ? `and a.site_id = $1`
+      : (orgId ? `and s.organization_id = $1` : "");
+    const scopeParam = siteId !== undefined ? siteId : (orgId || undefined);
+    const params = scopeParam !== undefined ? [scopeParam] : [];
+
+    const assetsQ = `
+      with ${LATEST_CTE},
+      alert_agg as (
+        select al.asset_id,
+          (count(*) filter (where al.state = 'open'))::int as open_alerts,
+          max(case al.severity when 'critical' then 3 when 'warning' then 2 else 1 end) filter (where al.state <> 'resolved') as worst_rank
+        from alerts al group by al.asset_id
+      )
+      select
+        a.id, a.site_id, a.name, a.type, a.status, a.pos_x, a.pos_y, a.pos_z, a.installed_at,
+        s.name as site_name, s.timezone as site_timezone,
+        coalesce(ag.open_alerts, 0) as open_alerts,
+        ag.worst_rank::int as worst_rank,
+        coalesce(
+          json_agg(json_build_object(
+            'metric', l.metric, 'value', l.value, 'unit', l.unit,
+            'recordedAt', to_char(l.recorded_at at time zone 'utc', 'YYYY-MM-DD"T"HH24:MI:SS"Z"'),
+            'delta24h', case when p.value is null then null else (round((l.value - p.value)::numeric, 2))::float8 end
+          ) order by l.metric) filter (where l.metric is not null), '[]'::json
+        ) as latest
+      from assets a
+      join sites s on s.id = a.site_id
+      left join latest l on l.asset_id = a.id
+      left join previous p on p.asset_id = a.id and p.metric = l.metric
+      left join alert_agg ag on ag.asset_id = a.id
+      where 1=1 ${assetScope}
+      group by a.id, s.name, s.timezone, ag.open_alerts, ag.worst_rank
+      order by a.name`;
+    const assetRows = (await p.query(assetsQ, params)).rows.map(r => ({
+      id: r.id, siteId: r.site_id, name: r.name, type: r.type, status: r.status,
+      posX: r.pos_x, posY: r.pos_y, posZ: r.pos_z,
+      installedAt: new Date(r.installed_at).toISOString(),
+      siteName: r.site_name, siteTimezone: r.site_timezone,
+      openAlerts: r.open_alerts,
+      worstSeverity: r.worst_rank ? ({ 1: "info", 2: "warning", 3: "critical" }[r.worst_rank] || null) : null,
+      latest: r.latest || [],
+    }));
+    res.json(assetRows);
+  } catch (err) { console.error("[api] assets list error:", err); res.status(500).json({ error: err.message }); }
+});
+
 // ── Asset detail (matches AssetDetailResponse) ──────────
 app.get("/api/assets/:id", async (req, res) => {
   try {
@@ -377,6 +431,11 @@ app.get("/api/alerts", async (req, res) => {
 
 // ── Organizations ───────────────────────────────────────
 app.get("/api/organizations", async (_req, res) => { res.json([]); });
+
+// ── Ambient (stub — requires external weather API) ──────
+app.get("/api/sites/:id/ambient", async (req, res) => {
+  res.status(404).json({ error: "Ambient weather data unavailable in demo mode" });
+});
 
 // ── Auth stubs (demo mode) ──────────────────────────────
 app.get("/api/auth/me", async (_req, res) => { res.json({ user: null }); });
