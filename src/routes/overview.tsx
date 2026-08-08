@@ -132,13 +132,13 @@ export default function OverviewPage() {
       ) : null}
 
       {/* ═══════════════════════════════════════════════════════════════
-          BENTO BLOCK — Assets + Alerts + Fleet
-          Assets table  (left, row 1) | Recent alerts (right, spans 2 rows)
-          Fleet by Type (left, row 2) | Recent alerts continues
+          BENTO BLOCK — Assets table and Recent alerts share a single
+          row so their bottom edges line up; Fleet distribution sits on
+          its own row below the bento and spans the full width.
          ═══════════════════════════════════════════════════════════════ */}
-      <div className="grid gap-4 xl:grid-cols-[1fr_340px] xl:grid-rows-[520px_auto]">
-        {/* Assets table — left column, row 1, fixed height with internal scroll in xl */}
-        <Card className="flex min-w-0 flex-col overflow-hidden xl:h-full xl:row-start-1 xl:col-start-1">
+      <div className="grid gap-4 xl:grid-cols-[1fr_340px]">
+        {/* Assets table — left column, fixed height with internal scroll in xl */}
+        <Card className="flex min-w-0 flex-col overflow-hidden xl:h-[480px] xl:row-start-1 xl:col-start-1">
           <CardHeader>
             <div className="flex items-center justify-between gap-4">
               <div>
@@ -165,8 +165,8 @@ export default function OverviewPage() {
           </CardContent>
         </Card>
 
-        {/* Recent alerts — right column, natural height (never stretches) */}
-        <Card className="flex flex-col overflow-hidden xl:self-start xl:row-start-1 xl:row-span-2 xl:col-start-2">
+        {/* Recent alerts — right column, matches the table's bottom edge */}
+        <Card className="flex flex-col overflow-hidden xl:h-[480px] xl:row-start-1 xl:col-start-2">
           <CardHeader>
             <div className="flex items-center justify-between">
               <CardTitle>Recent alerts</CardTitle>
@@ -181,17 +181,16 @@ export default function OverviewPage() {
             )}
           </CardContent>
         </Card>
-
-        {/* Fleet distribution — left column, row 2 */}
-        {overview.data && overview.data.assets.length > 0 ? (
-          <section
-            aria-label="Fleet distribution"
-            className="xl:min-h-[260px] xl:row-start-2 xl:col-start-1"
-          >
-            <AssetDistribution assets={overview.data.assets} />
-          </section>
-        ) : null}
       </div>
+
+      {/* ═══════════════════════════════════════════════════════════════
+          ROW 4 — Fleet distribution (full width, sits below the bento)
+         ═══════════════════════════════════════════════════════════════ */}
+      {overview.data && overview.data.assets.length > 0 ? (
+        <section aria-label="Fleet distribution" className="xl:min-h-[260px]">
+          <AssetDistribution assets={overview.data.assets} />
+        </section>
+      ) : null}
 
       {/* ═══════════════════════════════════════════════════════════════
           ROW 5 — Site forecasts (one card per site, full width)
